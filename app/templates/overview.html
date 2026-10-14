@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="mb-12 sm:mb-16">
+  <h1 class="max-w-3xl text-3xl font-bold tracking-tight {{ ui.H }} sm:text-4xl lg:text-5xl lg:leading-tight">Match car photos to their invoices automatically</h1>
+  <p class="mt-4 max-w-2xl text-lg sm:text-xl {{ ui.MUTED }}">
+    This tool reads repair invoices and photos of the car, works out which photos belong to which invoice, and only asks you when it isn&rsquo;t sure.
+  </p>
+  <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+    <a href="/find" class="{{ ui.BTN }} px-7 py-4 text-lg">{{ ui.icon("camera", "h-6 w-6") }} Try it: find an invoice from a photo</a>
+    {% if stats.review %}<a href="/review" class="{{ ui.BTN2 }} px-7 py-4 text-lg">See what needs your check ({{ stats.review }})</a>{% endif %}
+  </div>
+</section>
+
+{# How it works #}
+<section class="mb-12 sm:mb-16" aria-labelledby="how">
+  <h2 id="how" class="mb-6 text-2xl font-bold {{ ui.H }}">How it works</h2>
+  <ol class="grid gap-4 md:grid-cols-3">
+    {% for icon, title, text in [
+      ("upload", "Upload", "Add an invoice (PDF, scan or phone photo) and photos of the car."),
+      ("sparkle", "AI reads invoices and photos", "It finds the VIN, license plate, make, model, color and mileage."),
+      ("matched", "Matched, or sent for your check", "Clear matches are linked automatically. Anything uncertain waits for one click from you."),
+    ] %}
+    <li class="{{ ui.CARD }} relative flex gap-4 p-6 sm:p-7">
+      <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{{ ui.icon(icon, "h-6 w-6") }}</span>
+      <div>
+        <div class="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">Step {{ loop.index }}</div>
+        <h3 class="mt-0.5 text-xl font-semibold {{ ui.H }}">{{ title }}</h3>
+        <p class="mt-1.5 {{ ui.MUTED }}">{{ text }}</p>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{# Status #}
+<section aria-labelledby="now">
+  <h2 id="now" class="mb-2 text-2xl font-bold {{ ui.H }}">Where things stand</h2>
+  <p class="mb-6 text-lg {{ ui.MUTED }}">Click a card to see the cars behind it.</p>
+  {% if empty %}
+    {{ ui.empty_state("No cars yet", "Upload an invoice and its photos to get started.", "/upload", "Upload files") }}
+  {% else %}
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    {% macro card(href, number, title, text, kind=None) %}
+      <a href="{{ href }}" class="{{ ui.CARD }} group flex flex-col p-6 transition hover:-translate-y-0.5 hover:shadow-lg sm:p-7">
+        <div class="flex items-center gap-2 text-base font-semibold {{ {'matched': 'text-emerald-700 dark:text-emerald-300', 'check': 'text-amber-700 dark:text-amber-300', 'none': ui.MUTED}.get(kind, ui.H) }}">
+          {{ ui.icon(kind or "car") }}{{ title }}
+        </div>
+        <div class="mt-3 text-5xl font-bold tabular-nums {{ ui.H }}">{{ number }}</div>
+        <p class="mt-3 text-base {{ ui.MUTED }}">{{ text }}</p>
+        <span class="mt-auto pt-5 text-base font-semibold text-blue-700 group-hover:underline dark:text-blue-400">{{ caller() }} &rarr;</span>
+      </a>
+    {% endmacro %}
+    {% call card("/vehicles", stats.clusters, "Vehicles", "Cars with photos, from " ~ stats.invoices ~ " invoices and " ~ stats.photos ~ " photos.") %}See all cars{% endcall %}
+    {% call card("/vehicles", stats.auto, "Matched automatically", "%d%% of cars needed no human work." % stats.pct(stats.auto), "matched") %}See matched cars{% endcall %}
+    {% call card("/review", stats.review, "Needs your check", "The tool wasn't sure. Each one takes a single click.", "check") %}Check them{% endcall %}
+    <a href="/results" class="group flex flex-col rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-6 shadow-soft transition hover:-translate-y-0.5 hover:shadow-lg sm:p-7 dark:border-emerald-800 dark:bg-emerald-950/50">
+      <div class="flex items-center gap-2 text-base font-semibold text-emerald-800 dark:text-emerald-200">{{ ui.icon("shield") }}Wrong matches</div>
+      <div class="mt-3 text-5xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">{{ stats.wrong_auto }}</div>
+      <p class="mt-3 text-base text-emerald-900/80 dark:text-emerald-200/80">A wrong match is worse than asking you, so when the tool isn&rsquo;t sure, it asks.{% if stats.checked %} Checked against the known answers.{% endif %}</p>
+      <span class="mt-auto pt-5 text-base font-semibold text-emerald-800 group-hover:underline dark:text-emerald-300">How well it works &rarr;</span>
+    </a>
+  </div>
+  <p class="mt-6 flex flex-wrap items-center gap-x-1.5 text-base {{ ui.MUTED }}">
+    {{ ui.icon("none", "h-5 w-5") }}
+    <a href="/vehicles?show=no_invoice" class="{{ ui.LINK }}">{{ stats.unmatched + stats.no_invoice }} photo sets</a> have no invoice yet, and
+    <a href="/vehicles?show=no_photos" class="{{ ui.LINK }}">{{ stats.unlinked_invoices }} invoices</a> have no photos yet.
+  </p>
+  {% endif %}
+</section>
+
+<section class="{{ ui.CARD }} mt-12 p-6 sm:p-8">
+  {% call ui.details("Show technical details") %}
+  <div class="space-y-4 text-base {{ ui.MUTED }}">
+    <p><b class="{{ ui.H }}">Invoices:</b> the text layer of digital PDFs (pdfplumber), else PaddleOCR; labels and rules find each field;
+      the VIN must pass its check digit and is decoded with NHTSA vPIC. A local vision model (Ollama, qwen3.5 4B) fills only what is still missing.</p>
+    <p><b class="{{ ui.H }}">Photos:</b> the model sorts each photo (outside, VIN plate, door sticker, odometer, plate); barcodes (zxing-cpp), OCR and a plate reader (fast-alpr) read the details; the model double-checks them.</p>
+    <p><b class="{{ ui.H }}">Matching:</b> photos are grouped per car (shared VIN or plate, or the same phone within 10 minutes). Each group is scored against every invoice.
+      A VIN or plate confirmed by two independent readers on both sides links automatically; a conflicting one rules the invoice out; everything uncertain goes to a person.</p>
+    <p>OCR and the AI model never run at the same time, so it fits on an 8 GB laptop.</p>
+  </div>
+  {% endcall %}
+</section>
+{% endblock %}

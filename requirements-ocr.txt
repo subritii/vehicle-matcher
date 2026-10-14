@@ -1,0 +1,12 @@
+# Heavy OCR / plate-reading stack. Kept separate so Phase 0 VIN work installs fast.
+# Install with:
+#   uv pip install -r requirements-ocr.txt --excludes requirements-ocr-excludes.txt
+# paddlex (via paddleocr) pins opencv-contrib-python while fast-alpr needs
+# opencv-python-headless; both ship the same cv2 module and overwrite each other.
+# We keep only opencv-contrib-python: paddlex checks for that package name at runtime
+# and refuses to start without it, and it is a superset of the headless build.
+-r requirements.txt
+paddlepaddle>=3.0
+paddleocr>=3.0
+fast-alpr[onnx]>=0.1
+opencv-contrib-python==4.10.0.84

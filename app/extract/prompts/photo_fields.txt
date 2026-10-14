@@ -1,0 +1,21 @@
+This is a photo taken at a car repair shop. Answer in JSON.
+
+shot_type: what the photo mainly shows, one of
+- exterior: the outside of a car (whole car or a large part of it)
+- vin_plate: the VIN plate on the dashboard, seen through the windshield
+- door_jamb: the label/sticker in the door jamb (manufacturer, dates, tire pressure, VIN, barcode)
+- odometer: the instrument cluster or odometer display
+- plate: a close-up of a license plate
+- interior: seats, dashboard or cabin, without a readable odometer
+- other: anything else (documents, people, parts, the shop)
+
+Then read, only if the photo shows it clearly:
+- vin: the 17-character Vehicle Identification Number
+- plate: the license plate number, without the state
+- plate_state: the two-letter US state of the license plate
+- odometer: the total mileage on the odometer (not a trip meter), digits only
+- color: the car's paint color (exterior photos)
+- body_style: sedan, suv, pickup, hatchback, coupe, wagon, van, minivan or convertible (exterior photos)
+
+Use null for anything not visible or not readable with certainty. Never guess,
+complete or invent a value; a wrong value is much worse than null.

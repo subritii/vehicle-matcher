@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Screenshots of the web app (tools/screenshots.py); then: python -m playwright install chromium
+playwright>=1.47

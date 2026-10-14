@@ -1,0 +1,11 @@
+[project]
+name = "vehicle-matcher"
+version = "0.0.1"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-m 'not live'"
+markers = [
+    "live: hits real network services (run with: pytest -m live)",
+]

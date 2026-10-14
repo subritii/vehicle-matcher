@@ -1,0 +1,19 @@
+This image is a vehicle repair invoice or repair order (a scan or a phone photo).
+Read these fields and return them as JSON:
+
+- vin: the 17-character Vehicle Identification Number
+- plate: the license plate number, without the state
+- plate_state: the two-letter US state of the license plate
+- year: the vehicle model year
+- make: the vehicle manufacturer, e.g. Honda
+- model: the vehicle model, e.g. Accord
+- color: the vehicle color
+- mileage: the odometer reading (mileage in), digits only
+- invoice_date: the invoice date as YYYY-MM-DD
+- vendor: the name of the shop that issued the invoice (top of the page)
+- invoice_no: the invoice, repair order or receipt number
+- total: the grand total amount due, digits and decimal point only
+
+Copy each value exactly as printed. Use null for a field that is not printed or that
+you cannot read with certainty. Never guess, complete or invent a value; a wrong value
+is much worse than null.

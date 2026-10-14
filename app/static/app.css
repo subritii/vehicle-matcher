@@ -1,0 +1,30 @@
+/* The few styles Tailwind classes don't cover. */
+
+.field-box {
+  position: absolute;
+  border: 2px solid rgb(14 165 233 / 0.85);
+  background: rgb(14 165 233 / 0.10);
+  border-radius: 3px;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+.field-box.src-pdf { border-color: rgb(99 102 241 / 0.85); background: rgb(99 102 241 / 0.10); }
+.field-box .tag {
+  position: absolute; left: -2px; bottom: 100%; margin-bottom: 2px;
+  font: 600 10px/1.4 ui-sans-serif, system-ui, sans-serif; white-space: nowrap;
+  padding: 0 4px; border-radius: 3px; color: white; background: rgb(14 165 233);
+  opacity: 0; transition: opacity 0.12s;
+}
+.field-box.src-pdf .tag { background: rgb(99 102 241); }
+.field-box.is-active { background: rgb(250 204 21 / 0.35); border-color: rgb(234 179 8); box-shadow: 0 0 0 4px rgb(250 204 21 / 0.25); z-index: 2; }
+.field-box.is-active .tag, .boxes-labels .field-box .tag { opacity: 1; }
+.boxes-hidden .field-box { display: none; }
+tr.is-active, li.is-active { background: rgb(250 204 21 / 0.14); }
+
+mark.diff { background: rgb(244 63 94 / 0.22); color: inherit; border-radius: 2px; padding: 0 1px; font-weight: 700; }
+.dark mark.diff { background: rgb(244 63 94 / 0.35); }
+
+.is-selected { outline: 3px solid rgb(99 102 241); outline-offset: 2px; }
+
+.htmx-request .htmx-hide { display: none; }
+@keyframes pulse-bar { 0% { opacity: .55 } 50% { opacity: 1 } 100% { opacity: .55 } }
+.pulse { animation: pulse-bar 1.4s ease-in-out infinite; }

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Needs your check{% endblock %}
+{% block content %}
+{% set s = cluster.summary_json %}
+{% set top = cands[0] if cands else None %}
+
+<div class="mb-8 flex flex-wrap items-start justify-between gap-4 sm:mb-10">
+  <div>
+    <h1 class="text-3xl font-bold tracking-tight {{ ui.H }} sm:text-4xl">Needs your check</h1>
+    <p class="mt-3 max-w-3xl text-lg {{ ui.MUTED }}">The tool wasn&rsquo;t sure about these cars. Compare the photos with the invoice and answer one question.</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="rounded-full bg-amber-100 px-4 py-2 text-base font-semibold tabular-nums text-amber-900 dark:bg-amber-900/50 dark:text-amber-100">Car {{ pos + 1 }} of {{ total }}</span>
+    <a {% if prev_id %}href="/review/{{ prev_id }}" data-hotkey="arrowleft k"{% endif %} aria-label="Previous car" class="grid h-11 w-11 place-items-center rounded-xl border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800 {{ 'hover:bg-slate-50 dark:hover:bg-slate-700' if prev_id else 'pointer-events-none opacity-40' }}">{{ ui.icon("back") }}</a>
+    <a {% if next_id %}href="/review/{{ next_id }}" data-hotkey="arrowright j"{% endif %} aria-label="Skip to the next car" class="inline-flex h-11 items-center gap-1 rounded-xl border border-slate-300 bg-white px-4 font-semibold dark:border-slate-600 dark:bg-slate-800 {{ 'hover:bg-slate-50 dark:hover:bg-slate-700' if next_id else 'pointer-events-none opacity-40' }}">Skip {{ ui.icon("arrow", "h-4 w-4") }}</a>
+  </div>
+</div>
+
+{% if undo %}
+<div class="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-base dark:border-emerald-800 dark:bg-emerald-950/50" role="status">
+  <span class="text-emerald-600 dark:text-emerald-400">{{ ui.icon("matched", "h-6 w-6") }}</span>
+  <span class="text-emerald-900 dark:text-emerald-100">{{ undo.text }}</span>
+  <form method="post" action="/review/{{ undo.cluster_id }}/undo" class="ml-auto">
+    <button data-hotkey="u" class="inline-flex items-center rounded-xl border border-emerald-300 bg-white px-4 py-2 font-semibold text-emerald-900 ring-emerald-300 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-100 dark:hover:bg-emerald-900">Undo {{ ui.kbd("U") }}</button>
+  </form>
+</div>
+{% endif %}
+{% if error %}
+<div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-base text-rose-900 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-100" role="alert">{{ error }}</div>
+{% endif %}
+
+<section class="{{ ui.CARD }} p-6 sm:p-8">
+  <h2 class="text-2xl font-bold {{ ui.H }} sm:text-3xl">{{ "Is this the same car?" if top else "Which invoice belongs to this car?" }}</h2>
+  <div class="mt-4 flex gap-3 rounded-xl bg-amber-50 px-5 py-4 text-base text-amber-950 dark:bg-amber-950/40 dark:text-amber-100">
+    <span class="mt-0.5 text-amber-600 dark:text-amber-400">{{ ui.icon("check", "h-6 w-6") }}</span>
+    <div>
+      <div class="font-semibold">Why the tool is asking</div>
+      <ul class="mt-1 space-y-1">{% for r in plain_reasons(cluster.reasons_json) %}<li>{{ r }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+
+  <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]">
+    {# The car in the photos #}
+    <div>
+      <h3 class="mb-3 text-xl font-semibold {{ ui.H }}">Photos of the car</h3>
+      {% if photos %}
+      {% set first = photos[0] %}
+      <figure id="photo-main" class="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+        <img src="/media/{{ first.file_path }}" alt="" class="aspect-[4/3] w-full object-contain">
+        <figcaption class="border-t border-slate-200 px-4 py-2.5 text-base {{ ui.MUTED }} dark:border-slate-700" data-caption>{{ ui.shot_label(first.shot_type) }}{% if ui.photo_read(first) %}: {{ ui.photo_read(first) }}{% endif %}</figcaption>
+      </figure>
+      <div class="mt-3 grid grid-cols-4 gap-2">
+        {% for p in photos %}
+        <button type="button" data-full="/media/{{ p.file_path }}" data-target="photo-main" data-caption="{{ ui.shot_label(p.shot_type) }}{% if ui.photo_read(p) %}: {{ ui.photo_read(p) }}{% endif %}"
+                aria-label="Show photo: {{ ui.shot_label(p.shot_type) }}" class="overflow-hidden rounded-lg ring-1 ring-slate-200 dark:ring-slate-700 {{ 'is-selected' if loop.first }}">
+          <img src="/media/{{ p.thumb_path }}" alt="" class="aspect-square w-full object-cover">
+        </button>
+        {% endfor %}
+      </div>
+      <p class="mt-3 text-base {{ ui.MUTED }}">{{ photos|length }} photo{{ "s" if photos|length != 1 }}{% if s.time %}, taken {{ s.time|longdate }}{% if not s.time_from_exif %} (upload date){% endif %}{% endif %}{% if s.uploaders %} by {{ s.uploaders|join(", ") }}{% endif %}.</p>
+      {% endif %}
+    </div>
+
+    {# The best invoice, field by field #}
+    <div>
+      {% if top %}{% set inv = top.inv %}
+      <div class="mb-3 flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-xl font-semibold {{ ui.H }}">Best matching invoice</h3>
+          <p class="mt-1 text-base {{ ui.MUTED }}">{{ inv.vendor or "Unknown shop" }} · Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</p>
+        </div>
+        <a href="/vehicles/{{ inv.id }}" target="_blank" class="{{ ui.LINK }} shrink-0">Open invoice</a>
+      </div>
+      <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+        <div class="hidden grid-cols-[7.5rem_1fr_1fr_8.5rem] gap-x-3 bg-slate-50 px-4 py-2.5 text-sm font-semibold uppercase tracking-wide sm:grid {{ ui.MUTED }} dark:bg-slate-800/60">
+          <span></span><span>In the photos</span><span>On the invoice</span><span>Result</span>
+        </div>
+        {% for r in top.rows %}
+        {% set tone = {"agree": "text-emerald-700 dark:text-emerald-300", "conflict": "text-rose-700 dark:text-rose-300", "none": ui.MUTED}[r.state] %}
+        {% set result %}
+          <span class="inline-flex items-center gap-1.5 whitespace-nowrap text-base font-semibold {{ tone }}">
+            {% if r.state == "agree" %}{{ ui.icon("same", "h-5 w-5") }}{% elif r.state == "conflict" %}{{ ui.icon("different", "h-5 w-5") }}{% else %}<span class="w-5 text-center">–</span>{% endif %}{{ r.word }}
+          </span>
+        {% endset %}
+        <div class="border-t border-slate-100 px-4 py-3.5 [&:nth-child(2)]:border-t-0 sm:grid sm:grid-cols-[7.5rem_1fr_1fr_8.5rem] sm:items-center sm:gap-x-3 sm:[&:nth-child(2)]:border-t dark:border-slate-800">
+          <div class="flex items-center justify-between gap-3 sm:contents">
+            <span class="text-base font-medium {{ ui.H }}">{{ r.label }}</span>
+            <span class="sm:hidden">{{ result }}</span>
+          </div>
+          <div class="mt-2 grid {{ 'grid-cols-1 gap-2' if r.mono else 'grid-cols-2 gap-3' }} sm:contents">
+            <span class="min-w-0 break-words text-base {{ ui.H }} {{ 'font-mono text-sm sm:whitespace-nowrap' if r.mono }}">
+              <span class="block font-sans text-xs font-semibold uppercase tracking-wide sm:hidden {{ ui.MUTED }}">Photos</span>
+              {% if r.key == "vin" %}{{ vin_diff(r.photo, r.invoice) if r.photo else "—" }}{% else %}{{ r.photo or "—" }}{% endif %}
+            </span>
+            <span class="min-w-0 break-words text-base {{ ui.H }} {{ 'font-mono text-sm sm:whitespace-nowrap' if r.mono }}">
+              <span class="block font-sans text-xs font-semibold uppercase tracking-wide sm:hidden {{ ui.MUTED }}">Invoice</span>
+              {% if r.key == "vin" %}{{ vin_diff(r.invoice, r.photo) if r.invoice else "—" }}{% else %}{{ r.invoice or "—" }}{% endif %}
+              {% if r.note %}<span class="block whitespace-normal font-sans text-sm font-semibold text-rose-700 dark:text-rose-300">{{ r.note|sentence }}</span>{% endif %}
+            </span>
+          </div>
+          <span class="hidden sm:block">{{ result }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="text-lg {{ ui.MUTED }}">No invoice came close. If you know which one it is, pick it below.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# The answer #}
+  <div class="mt-10 flex flex-col gap-3 border-t border-slate-100 pt-8 sm:flex-row sm:flex-wrap dark:border-slate-800">
+    {% if top and not top.taken %}
+    <form method="post" action="/review/{{ cluster.id }}/confirm">
+      <input type="hidden" name="invoice_id" value="{{ top.inv.id }}">
+      <button data-hotkey="c 1 y" class="{{ ui.BTN }} w-full px-8 py-4 text-lg ring-blue-300 sm:w-auto">{{ ui.icon("same", "h-6 w-6") }} Yes, same car {{ ui.kbd("Y") }}</button>
+    </form>
+    {% endif %}
+    <button type="button" data-hotkey="p" onclick="const d = document.getElementById('pick'); d.open = true; d.scrollIntoView({behavior: 'smooth', block: 'start'})"
+            class="{{ ui.BTN2 }} px-8 py-4 text-lg ring-slate-300">Pick a different invoice {{ ui.kbd("P") }}</button>
+    <form method="post" action="/review/{{ cluster.id }}/no-invoice">
+      <button data-hotkey="n" class="{{ ui.BTN2 }} w-full px-8 py-4 text-lg ring-slate-300 sm:w-auto">No invoice for this car {{ ui.kbd("N") }}</button>
+    </form>
+  </div>
+  {% if top and top.taken %}<p class="mt-3 text-base {{ ui.MUTED }}">The best invoice already has photos of another car, so it can&rsquo;t be picked.</p>{% endif %}
+  <p class="mt-5 hidden text-sm sm:block {{ ui.MUTED }}">Keyboard: <b>Y</b> yes · <b>P</b> pick another · <b>N</b> no invoice · <b>U</b> undo · <b>&larr;</b>/<b>&rarr;</b> previous / skip. Every answer is saved and can be undone.</p>
+</section>
+
+{# Pick a different invoice #}
+<details id="pick" class="{{ ui.CARD }} group mt-8 p-6 sm:p-8">
+  <summary class="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+    <span class="text-xl font-semibold {{ ui.H }}">Pick a different invoice</span>
+    <svg class="h-5 w-5 transition group-open:rotate-90 {{ ui.MUTED }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+  </summary>
+  <div class="mt-6 space-y-4">
+    {% for item in cands[1:] %}{% set inv = item.inv %}
+    {% set same = item.rows|selectattr("state", "equalto", "agree")|list|length %}
+    {% set diff = item.rows|selectattr("state", "equalto", "conflict")|list|length %}
+    <div class="flex flex-col gap-4 rounded-xl border border-slate-200 p-5 sm:flex-row sm:items-center dark:border-slate-700">
+      <div class="min-w-0 flex-1">
+        <div class="text-lg font-semibold {{ ui.H }}">{{ ui.car_title(inv.field("year"), inv.field("make"), inv.field("model"), inv.field("color")) }}</div>
+        <div class="text-base {{ ui.MUTED }}">{{ inv.vendor or "Unknown shop" }} · Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</div>
+        <div class="mt-1 text-base"><span class="text-emerald-700 dark:text-emerald-300">{{ same }} detail{{ "s" if same != 1 }} the same</span>{% if diff %} · <span class="text-rose-700 dark:text-rose-300">{{ diff }} different</span>{% endif %}</div>
+      </div>
+      {% if item.taken %}<span class="{{ ui.MUTED }}">Already has photos</span>{% else %}
+      <form method="post" action="/review/{{ cluster.id }}/pick">
+        <input type="hidden" name="invoice_id" value="{{ inv.id }}">
+        <button data-hotkey="{{ loop.index + 1 }}" class="{{ ui.BTN2 }} w-full py-2.5 ring-slate-300 sm:w-auto">Pick this one {{ ui.kbd(loop.index + 1) }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+    <form method="post" action="/review/{{ cluster.id }}/pick" class="flex flex-col gap-3 rounded-xl bg-slate-50 p-5 sm:flex-row sm:items-center dark:bg-slate-800/50">
+      <label for="pick-other" class="shrink-0 text-base font-medium {{ ui.H }}">Any invoice without photos</label>
+      <select id="pick-other" name="invoice_id" required class="w-full min-w-0 flex-1 truncate rounded-xl border-slate-300 bg-white py-3 text-base dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+        <option value="">Choose from {{ others|length }} invoices…</option>
+        {% for i in others %}<option value="{{ i.id }}">{{ i.invoice_no or i.id }} · {{ i.vendor or "?" }} · {{ i.date.strftime("%b %d, %Y") if i.date else "no date" }} · {{ [i.field("year"), i.field("make"), i.field("model")]|select|join(" ") }}</option>{% endfor %}
+      </select>
+      <button class="{{ ui.BTN }} py-3">Pick</button>
+    </form>
+  </div>
+</details>
+
+<section class="{{ ui.CARD }} mt-8 p-6 sm:p-8">
+  {% call ui.details("Show details") %}
+  <p class="mb-4 text-base {{ ui.MUTED }}">How the tool scored each invoice. 80 or more with a clear lead matches automatically; a VIN or plate confirmed on both sides matches on its own.</p>
+  <div class="space-y-4">
+    {% for item in cands %}{% set c = item.c %}
+    <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <span class="font-semibold {{ ui.H }}">{{ item.inv.vendor or "Unknown shop" }} · {{ item.inv.invoice_no or item.inv.id }}</span>
+        <span class="font-semibold tabular-nums {{ ui.H }}">{{ "%g"|format(c.score) }} points</span>
+      </div>
+      <ul class="mt-2 space-y-0.5 text-base {{ ui.MUTED }}">
+        {% for sig in c.signals %}<li>+{{ "%g"|format(sig.points) }} {{ sig.name.replace("_", "/") }}: {{ sig.detail }}</li>{% endfor %}
+        {% for x in c.conflicts %}<li class="text-rose-700 dark:text-rose-300">different: {{ x }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+    <p class="text-sm {{ ui.MUTED }}">Photo set {{ cluster.id }}.</p>
+  </div>
+  {% endcall %}
+</section>
+{% endblock %}

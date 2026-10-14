@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Upload {{ job.id }}{% endblock %}
+{% block content %}
+<a href="/upload" class="mb-6 inline-flex items-center gap-1 text-base font-medium {{ ui.MUTED }} hover:text-slate-900 dark:hover:text-white">{{ ui.icon("back") }} Upload</a>
+{{ ui.page_header("Upload " ~ job.id, "The invoice and photos are read one step at a time, then matched.") }}
+{% include "_job_status.html" %}
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% set v = inv.vehicle %}
+{% set ex = inv.extracted_json %}
+{% set boxes = ex.boxes or {} %}
+{% set title = ui.car_title(v.year, v.make, v.model, v.color) if v else ui.car_title(inv.field("year"), inv.field("make"), inv.field("model"), inv.field("color")) %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<a href="/vehicles" class="mb-6 inline-flex items-center gap-1 text-base font-medium {{ ui.MUTED }} hover:text-slate-900 dark:hover:text-white">{{ ui.icon("back") }} All vehicles</a>
+
+<h1 class="text-3xl font-bold tracking-tight {{ ui.H }} sm:text-4xl">{{ title }}</h1>
+<div class="mt-3 flex flex-wrap gap-x-8 gap-y-2 text-lg {{ ui.MUTED }}">
+  {% set vin = v.vin if v else inv.field("vin") %}{% set plate = v.plate if v else inv.field("plate") %}
+  <span>VIN <span class="font-mono font-semibold {{ ui.H }}">{{ vin or "not found" }}</span></span>
+  {% if plate %}<span>Plate <span class="font-mono font-semibold {{ ui.H }}">{{ plate }}{% if v and v.state %} {{ v.state }}{% endif %}</span></span>{% endif %}
+</div>
+
+{# Status banner: what happened #}
+<div class="mt-8 flex items-start gap-4 rounded-2xl border px-6 py-5 {{ 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/50' if cluster and cluster.status == 'linked' else 'border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60' }}" role="status">
+  {% if cluster and cluster.status == "linked" %}
+    <span class="mt-0.5 text-emerald-600 dark:text-emerald-400">{{ ui.icon("matched", "h-7 w-7") }}</span>
+    <p class="text-lg text-emerald-900 dark:text-emerald-100">{% set sent = match_sentence(cluster) %}<b>{{ sent.split(":")[0] }}:</b>{{ sent.split(":", 1)[1] }}</p>
+  {% else %}
+    <span class="mt-0.5 text-slate-500">{{ ui.icon("none", "h-7 w-7") }}</span>
+    <p class="text-lg {{ ui.H }}"><b>No photos yet:</b> no photos of this car have been matched to this invoice.
+      <a href="/find" class="{{ ui.LINK }}">Find photos for it</a> or <a href="/upload" class="{{ ui.LINK }}">upload some</a>.</p>
+  {% endif %}
+</div>
+
+<div class="mt-10 grid gap-8 lg:grid-cols-2">
+  {# Invoice #}
+  <section class="{{ ui.CARD }} p-6 sm:p-8" aria-labelledby="inv-title">
+    <div class="mb-5 flex flex-wrap items-baseline justify-between gap-3">
+      <h2 id="inv-title" class="text-2xl font-semibold {{ ui.H }}">Invoice</h2>
+      <a href="/media/{{ inv.file_path }}" target="_blank" class="{{ ui.LINK }}">Open original</a>
+    </div>
+    <div id="invoice-frame" class="boxes-hidden relative overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700">
+      <img src="/media/{{ inv.image_path }}" alt="Invoice {{ inv.invoice_no or inv.id }}" class="block w-full">
+      {% for name, b in boxes.items() %}
+        {% set fsrc = ex.fields[name].source if name in ex.fields else "" %}
+        <div class="field-box {{ 'src-pdf' if fsrc == 'pdf_text' else 'src-ocr' }}" data-field="{{ name }}"
+             style="left: {{ '%.2f' % (b[0] * 100 - 0.3) }}%; top: {{ '%.2f' % (b[1] * 100 - 0.25) }}%; width: {{ '%.2f' % ((b[2] - b[0]) * 100 + 0.6) }}%; height: {{ '%.2f' % ((b[3] - b[1]) * 100 + 0.5) }}%">
+          <span class="tag">{{ name.replace("_", " ") }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    {% if boxes %}
+    <label class="mt-5 inline-flex cursor-pointer items-center gap-3 text-base font-medium {{ ui.H }}">
+      <input type="checkbox" class="h-5 w-5 rounded border-slate-300 text-blue-700 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+             onchange="document.getElementById('invoice-frame').classList.toggle('boxes-hidden', !this.checked)">
+      Show where each field was read
+    </label>
+    {% endif %}
+  </section>
+
+  <div class="space-y-8">
+    {# Key fields #}
+    <section class="{{ ui.CARD }} p-6 sm:p-8" aria-labelledby="fields-title">
+      <h2 id="fields-title" class="mb-5 text-2xl font-semibold {{ ui.H }}">What the invoice says</h2>
+      {% set f = ex.fields %}
+      <dl class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for name, label in [("vin", "VIN"), ("plate", "License plate"), ("make", "Make"), ("model", "Model"), ("year", "Year"), ("color", "Color"),
+                               ("mileage", "Mileage"), ("invoice_date", "Invoice date"), ("vendor", "Shop"), ("invoice_no", "Invoice number"), ("total", "Total")] %}
+          {% set fv = f.get(name) %}
+          <div class="flex items-baseline justify-between gap-6 py-3" data-field="{{ name }}">
+            <dt class="text-base {{ ui.MUTED }}">{{ label }}</dt>
+            <dd class="text-right text-base font-semibold {{ ui.H if fv else 'font-normal text-slate-400 dark:text-slate-500' }} {{ 'font-mono' if name in ('vin', 'plate') and fv }}">
+              {%- if not fv %}not found
+              {%- elif name == "total" %}{{ fv.value|money }}
+              {%- elif name == "mileage" and fv.value.isdigit() %}{{ "{:,}".format(fv.value|int) }} miles
+              {%- elif name == "invoice_date" %}{{ fv.value|longdate }}
+              {%- elif name == "plate" and f.get("plate_state") %}{{ fv.value }} {{ f.plate_state.value }}
+              {%- elif name == "color" %}{{ fv.value|sentence }}
+              {%- else %}{{ fv.value }}{% endif -%}
+              {% if name == "vin" and fv and ex.vin_trusted %}<span class="ml-2 align-middle">{{ ui.status("matched", "VIN confirmed") }}</span>{% endif %}
+            </dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </section>
+
+    {# Photos #}
+    <section class="{{ ui.CARD }} p-6 sm:p-8" aria-labelledby="photos-title">
+      <h2 id="photos-title" class="mb-5 text-2xl font-semibold {{ ui.H }}">Photos{% if photos %} <span class="font-normal {{ ui.MUTED }}">({{ photos|length }})</span>{% endif %}</h2>
+      {% if photos %}
+      <div class="grid grid-cols-2 gap-4">
+        {% for p in photos %}
+        <a href="/media/{{ p.file_path }}" target="_blank" class="group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+          <img src="/media/{{ p.thumb_path }}" alt="{{ ui.shot_label(p.shot_type) }}" loading="lazy" class="aspect-[4/3] w-full object-cover transition group-hover:scale-[1.02]">
+          <div class="p-3">
+            <div class="font-semibold {{ ui.H }}">{{ ui.shot_label(p.shot_type) }}</div>
+            <div class="truncate text-sm {{ ui.MUTED }}">{{ ui.photo_read(p) or "—" }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+        <p class="text-lg {{ ui.MUTED }}">No photos yet.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+<section class="{{ ui.CARD }} mt-8 p-6 sm:p-8">
+  {% call ui.details("Show details") %}
+  <div class="grid gap-8 lg:grid-cols-2">
+    <div>
+      <h3 class="mb-3 text-xl font-semibold {{ ui.H }}">How each field was read</h3>
+      <table class="w-full text-base">
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for name, fv in ex.fields.items() %}
+          <tr data-field="{{ name }}">
+            <td class="py-2 pr-3 {{ ui.MUTED }}">{{ name.replace("_", " ")|sentence }}</td>
+            <td class="py-2 pr-3">{{ ui.source(fv.source) }}</td>
+            <td class="py-2 text-right">{{ ui.confidence(fv.confidence) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="mt-4 text-base {{ ui.MUTED }}">
+        {% if ex.vin_trusted %}VIN confirmed by {% for c in ex.vin_confirmations|selectattr("agrees") %}{{ {"text_layer": "the PDF text", "vpic": "the official VIN lookup (make and year agree)", "vision": "the AI reading the same VIN", "photo_vin": "a photo"}.get(c.source, c.source) }}{{ ", " if not loop.last }}{% endfor %}.
+        {% elif ex.fields.vin %}The VIN could not be confirmed, so it can help a match but never match on its own.{% endif %}
+      </p>
+    </div>
+    <div>
+      <h3 class="mb-3 text-xl font-semibold {{ ui.H }}">History</h3>
+      {% if events %}
+      <ol class="space-y-3 text-base">
+        {% for e in events %}
+        <li class="flex flex-wrap items-baseline gap-x-3">
+          <span class="font-medium {{ ui.H }}">{{ {"linked": "Matched automatically", "review": "Sent for a check", "unmatched": "No invoice found", "confirm": "Confirmed by a person", "pick": "A person picked this invoice", "no_invoice": "A person said: no invoice", "undo": "Decision undone", "lookup": "Saved from Find invoice by photo", "add_photos": "Photos added from Find invoice by photo"}.get(e.action, e.action) }}</span>
+          {% if e.score is not none %}<span class="text-sm {{ ui.MUTED }}">score {{ "%g"|format(e.score) }}</span>{% endif %}
+          <span class="ml-auto text-sm tabular-nums {{ ui.MUTED }}">{{ e.decided_at.strftime("%b %d, %H:%M") }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}<p class="{{ ui.MUTED }}">Nothing yet.</p>{% endif %}
+    </div>
+  </div>
+  {% endcall %}
+</section>
+{% endblock %}

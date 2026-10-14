@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Upload{% endblock %}
+{% block content %}
+{{ ui.page_header("Upload", "Add one invoice and the photos of its car. The tool reads them and matches them, or asks you if it isn't sure.") }}
+
+{% if error %}
+<div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-base text-rose-900 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-100" role="alert">{{ error }}</div>
+{% endif %}
+
+<div class="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+  <form method="post" action="/upload" enctype="multipart/form-data" hx-boost="false" class="{{ ui.CARD }} space-y-7 p-6 sm:p-8">
+    {% for id, name, title, hint, accept, multiple, icon in [
+      ("invoice", "invoice", "1. The invoice", "A PDF, a scan or a phone photo of the invoice", ".pdf,.jpg,.jpeg,.png,.heic,.heif,.tif,.tiff,.webp", False, "upload"),
+      ("photos", "photos", "2. Photos of the car", "Outside, VIN plate, door sticker, odometer, license plate: whatever you have", "image/*,.heic,.heif", True, "camera"),
+    ] %}
+    <div>
+      <label class="mb-2 block text-xl font-semibold {{ ui.H }}" for="{{ id }}">{{ title }}</label>
+      <label for="{{ id }}" class="flex cursor-pointer items-center gap-5 rounded-2xl border-2 border-dashed border-slate-300 px-5 py-6 transition hover:border-blue-500 hover:bg-blue-50/50 dark:border-slate-600 dark:hover:border-blue-400 dark:hover:bg-blue-950/30">
+        <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{{ ui.icon(icon, "h-6 w-6") }}</span>
+        <span class="min-w-0"><span class="block text-base font-semibold {{ ui.H }}" id="{{ id }}-name">Choose {{ "photos" if multiple else "a file" }}</span><span class="block text-base {{ ui.MUTED }}">{{ hint }}</span></span>
+        <input id="{{ id }}" name="{{ name }}" type="file" {{ "multiple" if multiple else "required" }} accept="{{ accept }}" class="sr-only"
+               onchange="document.getElementById('{{ id }}-name').textContent = this.files.length ? (this.files.length > 1 ? this.files.length + ' photos chosen' : this.files[0].name) : 'Choose a file'">
+      </label>
+    </div>
+    {% endfor %}
+    <div>
+      <label class="mb-2 block text-base font-semibold {{ ui.H }}" for="uploader">Your name</label>
+      <input id="uploader" name="uploader" value="Demo user" maxlength="60" class="w-full rounded-xl border-slate-300 bg-white py-3 text-base dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+    </div>
+    <div class="flex flex-col gap-3 border-t border-slate-100 pt-7 sm:flex-row sm:items-center dark:border-slate-800">
+      <button class="{{ ui.BTN }} px-8 py-4 text-lg">{{ ui.icon("upload", "h-6 w-6") }} Upload and match</button>
+      <span class="text-base {{ ui.MUTED }}">AI is {{ "on" if vision else "off (rules and OCR only)" }}.</span>
+    </div>
+  </form>
+
+  <div class="space-y-8">
+    {% if sample %}
+    <div class="{{ ui.CARD }} p-6 sm:p-8">
+      <h2 class="text-xl font-semibold {{ ui.H }}">No files at hand? Try the sample car</h2>
+      <p class="mt-2 text-base {{ ui.MUTED }}">One car was held back from the demo: its invoice and {{ sample[1]|length }} photos. Watch each step happen.</p>
+      <form method="post" action="/upload/sample" class="mt-5">
+        <button class="{{ ui.BTN2 }}">Process the sample car</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if recent %}
+    <div class="{{ ui.CARD }} p-6 sm:p-8">
+      <h2 class="mb-4 text-xl font-semibold {{ ui.H }}">Recent uploads</h2>
+      <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+        {% for j in recent %}
+        <li class="flex flex-wrap items-center gap-3 py-3">
+          <a href="/upload/{{ j.id }}" class="{{ ui.LINK }}">Upload {{ j.id }}</a>
+          <span class="{{ ui.MUTED }}">{{ j.photo_paths|length }} photo{{ "s" if j.photo_paths|length != 1 }} · {{ j.created_at.strftime("%b %d, %H:%M") }}</span>
+          <span class="ml-auto text-base font-medium {{ {'done': 'text-emerald-700 dark:text-emerald-300', 'failed': 'text-rose-700 dark:text-rose-300'}.get(j.status, 'text-amber-700 dark:text-amber-300') }}">{{ {"done": "Done", "failed": "Failed", "queued": "Waiting", "running": "Working…"}[j.status] }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

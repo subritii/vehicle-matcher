@@ -1,0 +1,219 @@
+{% import "_ui.html" as ui %}
+{% set busy = item.status in ("queued", "running") %}
+{% set res = item.result %}
+<div id="find-status" class="space-y-8" {% if busy %}hx-get="/find/{{ item.token }}/status" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %}>
+
+  <div class="flex gap-3 overflow-x-auto pb-1">
+    {% for name in item.names %}
+      {% if item.thumb(loop.index0).exists() %}
+        <img src="/find/{{ item.token }}/thumb/{{ loop.index0 }}.jpg" alt="Your photo {{ loop.index }}" class="h-24 w-24 shrink-0 rounded-xl object-cover ring-1 ring-slate-200 sm:h-28 sm:w-28 dark:ring-slate-700">
+      {% else %}
+        <div class="grid h-24 w-24 shrink-0 place-items-center rounded-xl bg-slate-100 p-1 text-center text-xs text-slate-500 ring-1 ring-slate-200 sm:h-28 sm:w-28 dark:bg-slate-800 dark:ring-slate-700">{{ name }}</div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  {% if busy %}
+  <section class="{{ ui.CARD }} p-6 sm:p-8">
+    <div class="flex items-center gap-4">
+      <svg class="h-8 w-8 shrink-0 animate-spin text-blue-700 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
+      <div class="min-w-0 flex-1">
+        <h2 class="text-2xl font-semibold {{ ui.H }}">{% if item.current %}Now: {{ item.current.label }}{% else %}Waiting to start…{% endif %}</h2>
+        <p class="mt-1 text-base {{ ui.MUTED }}">{{ elapsed }} seconds so far · step {{ item.finished + (1 if item.current else 0) }} of {{ item.steps|length }} · usually under 30 seconds</p>
+      </div>
+    </div>
+    <div class="mt-6 h-4 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div class="pulse h-full rounded-full bg-blue-700 transition-all duration-500 dark:bg-blue-500" style="width: {{ [8, 100 * item.finished / item.steps|length]|max }}%"></div>
+    </div>
+    <ol class="mt-6 space-y-2.5 text-base">
+      {% for s in item.steps %}
+      <li class="flex items-center gap-3 {{ ui.H if s.status in ('running', 'done') else ui.MUTED }}">
+        <span class="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold
+          {{ {'done': 'bg-emerald-500 text-white', 'running': 'bg-blue-700 text-white dark:bg-blue-500', 'skipped': 'bg-slate-200 text-slate-500 dark:bg-slate-700'}.get(s.status, 'border-2 border-slate-300 dark:border-slate-600') }}">{% if s.status == "done" %}{{ ui.icon("same", "h-4 w-4") }}{% elif s.status == "skipped" %}–{% endif %}</span>
+        <span class="{{ 'font-semibold' if s.status == 'running' }}">{{ s.label }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  {% elif item.status == "failed" %}
+  <section class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-base text-rose-900 sm:p-8 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-100">
+    <h2 class="text-xl font-semibold">The photos could not be read</h2>
+    <p class="mt-2">{{ item.error }}</p>
+  </section>
+
+  {% else %}
+  {% set r = res.read %}
+  {% set seen = [("VIN", r.vin), ("Plate", ((r.plate or "") ~ " " ~ (r.plate_state or "")).strip()), ("Car", [r.year, r.make|make if r.make, r.model]|select|join(" ")), ("Color", (r.color or "")|sentence), ("Mileage", "{:,} miles".format(r.odometer) if r.odometer is not none else "")]|selectattr(1)|list %}
+  <p class="text-lg {{ ui.MUTED }}">
+    {% if seen %}The photos show: {% for label, value in seen %}<span class="{{ ui.H }}">{{ label }} <b class="{{ 'font-mono' if label in ('VIN', 'Plate') }}">{{ value }}</b></span>{{ ", " if not loop.last else "." }}{% endfor %}
+    {% else %}Nothing that identifies the car could be read from these photos.{% endif %}
+  </p>
+
+  {% if res.kind == "confident" %}
+    {% set x = res["items"][0] %}{% set inv = invoices[x.invoice_id] %}{% set ex = inv.extracted_json %}
+    <section class="overflow-hidden rounded-2xl border-2 border-emerald-400 bg-white shadow-soft dark:border-emerald-700 dark:bg-slate-900" data-highlight="{{ x.highlight }}">
+      <div class="flex items-start gap-4 bg-emerald-50 px-6 py-6 sm:px-8 dark:bg-emerald-950/50">
+        <span class="text-emerald-600 dark:text-emerald-400">{{ ui.icon("matched", "h-9 w-9") }}</span>
+        <div>
+          <h2 class="text-2xl font-bold text-emerald-900 dark:text-emerald-100 sm:text-3xl">Found it: {{ x.agree[0] if x.agree else "match" }}</h2>
+          {% if x.agree[1:] %}<p class="mt-1 text-lg text-emerald-900/80 dark:text-emerald-100/80">{{ x.agree[1:]|join(", ")|sentence }}.</p>{% endif %}
+        </div>
+      </div>
+      <div class="grid gap-8 p-6 sm:grid-cols-[minmax(0,1fr)_15rem] sm:p-8">
+        <div class="min-w-0">
+          <h3 class="text-2xl font-semibold {{ ui.H }}">{{ ui.car_title(inv.field("year"), inv.field("make"), inv.field("model"), inv.field("color")) }}</h3>
+          <p class="mt-1 text-lg {{ ui.MUTED }}">{{ inv.vendor or "Unknown shop" }} · Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</p>
+          <dl class="mt-5 divide-y divide-slate-100 dark:divide-slate-800">
+            {% for name, label in [("vin", "VIN"), ("plate", "License plate"), ("make", "Make"), ("model", "Model"), ("color", "Color")] %}
+              {% set fv = ex.fields.get(name) %}
+              {% if fv %}
+              <div class="flex items-center justify-between gap-4 rounded-lg px-3 py-3 {{ 'bg-emerald-50 dark:bg-emerald-950/40' if name == x.highlight }}">
+                <dt class="text-base {{ ui.MUTED }}">{{ label }}</dt>
+                <dd class="flex min-w-0 flex-wrap items-center justify-end gap-x-2 text-base font-semibold {{ 'font-mono' if name in ('vin', 'plate') }} {{ 'text-emerald-800 dark:text-emerald-200' if name == x.highlight else ui.H }}">
+                  {{ fv.value if name != "color" else fv.value|sentence }}{% if name == x.highlight %}<span class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap font-sans text-sm text-emerald-700 dark:text-emerald-300">{{ ui.icon("same", "h-4 w-4") }}same</span>{% endif %}
+                </dd>
+              </div>
+              {% endif %}
+            {% endfor %}
+          </dl>
+        </div>
+        <a href="/vehicles/{{ inv.id }}" target="_blank" class="relative block self-start overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700" aria-label="Open the invoice">
+          <img src="/media/{{ inv.image_path }}" alt="Invoice {{ inv.invoice_no or inv.id }}" class="block w-full">
+          {% set b = (ex.boxes or {}).get(x.highlight) %}
+          {% if b %}<div class="field-box is-active" style="left: {{ '%.2f' % (b[0] * 100 - 0.5) }}%; top: {{ '%.2f' % (b[1] * 100 - 0.4) }}%; width: {{ '%.2f' % ((b[2] - b[0]) * 100 + 1) }}%; height: {{ '%.2f' % ((b[3] - b[1]) * 100 + 0.8) }}%"></div>{% endif %}
+        </a>
+      </div>
+      <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:px-8 dark:border-slate-800 dark:bg-slate-800/40">
+        <form method="post" action="/find/{{ item.token }}/save">
+          <input type="hidden" name="invoice_id" value="{{ inv.id }}">
+          <button class="{{ ui.BTN }} w-full sm:w-auto">Save to this invoice</button>
+        </form>
+        <a href="/vehicles/{{ inv.id }}" class="{{ ui.BTN2 }}">Open invoice</a>
+        <span class="text-base sm:ml-auto {{ ui.MUTED }}">{% if x.linked %}This car already has photos; saving adds yours.{% else %}This invoice has no photos yet.{% endif %}</span>
+      </div>
+    </section>
+
+  {% elif res.kind == "possible" %}
+    <section>
+      <h2 class="text-2xl font-bold {{ ui.H }}">Possible matches</h2>
+      <p class="mt-2 text-lg {{ ui.MUTED }}">No VIN or license plate confirmed a match, so these are the closest invoices. Check before saving.</p>
+      <div class="mt-6 space-y-5">
+        {% for x in res["items"] %}{% set inv = invoices[x.invoice_id] %}
+        <article class="{{ ui.CARD }} overflow-hidden" data-candidate="{{ inv.id }}">
+          <div class="flex gap-5 p-6 sm:p-7">
+            <a href="/vehicles/{{ inv.id }}" target="_blank" class="hidden h-28 w-[5.5rem] shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white sm:block dark:border-slate-700" aria-label="Open the invoice">
+              <img src="/media/{{ inv.image_path }}" alt="" class="h-full w-full object-cover object-top">
+            </a>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="text-xl font-semibold {{ ui.H }}">{{ ui.car_title(inv.field("year"), inv.field("make"), inv.field("model"), inv.field("color")) }}</h3>
+                  <p class="mt-1 text-base {{ ui.MUTED }}">{{ inv.vendor or "Unknown shop" }} · Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</p>
+                </div>
+                <span class="shrink-0 rounded-full px-3 py-1 text-sm font-semibold ring-1 ring-inset {{ {'High': 'bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:ring-emerald-800', 'Medium': 'bg-amber-50 text-amber-900 ring-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:ring-amber-800', 'Low': 'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700'}[x.confidence] }}">{{ x.confidence }} confidence</span>
+              </div>
+              <ul class="mt-4 space-y-1.5 text-base">
+                {% if x.agree %}<li class="flex gap-2 text-emerald-800 dark:text-emerald-300">{{ ui.icon("same", "mt-0.5 h-5 w-5 shrink-0") }}<span>{{ x.agree|join(", ")|sentence }}</span></li>{% endif %}
+                {% for w in x.disagree %}<li class="flex gap-2 text-rose-800 dark:text-rose-300">{{ ui.icon("different", "mt-0.5 h-5 w-5 shrink-0") }}<span>{{ w|sentence }}</span></li>{% endfor %}
+              </ul>
+            </div>
+          </div>
+          <div class="flex flex-col gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:px-7 dark:border-slate-800">
+            <form method="post" action="/find/{{ item.token }}/save">
+              <input type="hidden" name="invoice_id" value="{{ inv.id }}">
+              <button class="{{ ui.BTN2 }} w-full py-2.5 sm:w-auto">Save to this invoice</button>
+            </form>
+            <a href="/vehicles/{{ inv.id }}" class="px-2 py-2 text-center {{ ui.LINK }}">Open invoice</a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="mt-6">
+        {% call ui.details("Show details") %}
+        <p class="text-base {{ ui.MUTED }}">Points per invoice: {% for x in res["items"] %}{{ invoices[x.invoice_id].invoice_no or x.invoice_id }} {{ "%g"|format(x.score) }}{{ ", " if not loop.last }}{% endfor %}. 80 or more counts as high confidence, 40 or more as medium.</p>
+        {% endcall %}
+      </div>
+    </section>
+
+  {% elif res.kind == "many" %}
+    <section class="rounded-2xl border-2 border-amber-300 bg-white shadow-soft dark:border-amber-700 dark:bg-slate-900">
+      <div class="flex items-start gap-4 bg-amber-50 px-6 py-6 sm:px-8 dark:bg-amber-950/40">
+        <span class="text-amber-600 dark:text-amber-400">{{ ui.icon("check", "h-9 w-9") }}</span>
+        <div>
+          <h2 class="text-2xl font-bold text-amber-950 dark:text-amber-100 sm:text-3xl">{{ res.fits.count }} invoices fit this description</h2>
+          <p class="mt-1 text-lg text-amber-950/80 dark:text-amber-100/80">{{ res.fits.what|sentence }}. That isn&rsquo;t enough to tell which one it is, so the tool doesn&rsquo;t pick one.</p>
+        </div>
+      </div>
+      <div class="p-6 sm:p-8">
+        <p class="text-lg font-semibold {{ ui.H }}">Add a photo of the VIN sticker or the license plate to find the exact invoice.</p>
+        <a href="/find" class="{{ ui.BTN }} mt-5">{{ ui.icon("camera", "h-5 w-5") }} Add a VIN or plate photo</a>
+        {% if res["items"] %}
+        <h3 class="mt-8 text-xl font-semibold {{ ui.H }}">A few of them</h3>
+        <ul class="mt-3 divide-y divide-slate-100 dark:divide-slate-800" data-fits="{{ res.fits.count }}">
+          {% for x in res["items"] %}{% set inv = invoices[x.invoice_id] %}
+          <li class="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-3">
+            <a href="/vehicles/{{ inv.id }}" target="_blank" class="{{ ui.LINK }}">{{ ui.car_title(inv.field("year"), inv.field("make"), inv.field("model"), inv.field("color")) }}</a>
+            <span class="{{ ui.MUTED }}">Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </section>
+
+  {% else %}
+    <section class="{{ ui.CARD }} px-6 py-12 text-center sm:px-10">
+      <div class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">{{ ui.icon("none", "h-9 w-9") }}</div>
+      <h2 class="mt-5 text-2xl font-bold {{ ui.H }}">No matching invoice found.</h2>
+      <p class="mx-auto mt-2 max-w-md text-lg {{ ui.MUTED }}">Add a photo of the VIN plate, the door sticker or the license plate: they identify the car exactly. The invoice may also not be in the system yet.</p>
+      <a href="/find" class="{{ ui.BTN }} mt-8">Try other photos</a>
+    </section>
+  {% endif %}
+  {# How it found this #}
+  <section class="{{ ui.CARD }} p-6 sm:p-8" aria-labelledby="how-found">
+    <h2 id="how-found" class="text-2xl font-bold {{ ui.H }}">How it found this</h2>
+    <p class="mt-3 text-lg {{ ui.H }}"><b>{{ {"confident": "Found it.", "possible": "Possible matches.", "many": "Several invoices fit.", "none": "No match."}[res.kind] }}</b> {{ res.why }}</p>
+
+    <h3 class="mt-8 text-xl font-semibold {{ ui.H }}">1. What it read from each photo</h3>
+    <ul class="mt-3 space-y-3">
+      {% for ph in res.photos or [] %}
+      <li class="flex gap-4 rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+        {% if item.thumb(loop.index0).exists() %}<img src="/find/{{ item.token }}/thumb/{{ loop.index0 }}.jpg" alt="" class="h-16 w-16 shrink-0 rounded-lg object-cover">{% endif %}
+        <div class="min-w-0">
+          <div class="font-semibold {{ ui.H }}">{{ ph.type }} <span class="font-normal {{ ui.MUTED }}">(recognized by {{ ph.type_by }})</span></div>
+          {% if ph.reads %}
+          <ul class="mt-1 space-y-0.5 text-base">
+            {% for label, value, by in ph.reads %}<li><span class="{{ ui.MUTED }}">{{ label }}:</span> <span class="{{ 'font-mono' if label in ('VIN', 'Plate') }} font-medium {{ ui.H }}">{{ value }}</span> <span class="text-sm {{ ui.MUTED }}">read by {{ by }}</span></li>{% endfor %}
+          </ul>
+          {% else %}<p class="text-base {{ ui.MUTED }}">Nothing readable for matching.</p>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <h3 class="mt-8 text-xl font-semibold {{ ui.H }}">2. How it searched</h3>
+    <ol class="mt-3 space-y-1.5 text-base">
+      {% for line in res.searches or [] %}<li class="flex gap-2"><span class="{{ ui.MUTED }}">{{ loop.index }}.</span><span class="{{ ui.H }}">{{ line }}</span></li>{% endfor %}
+    </ol>
+
+    {% if res["items"] %}
+    <h3 class="mt-8 text-xl font-semibold {{ ui.H }}">3. How {{ "the invoice compares" if res["items"]|length == 1 else "each invoice compares" }}</h3>
+    <div class="mt-3 space-y-3">
+      {% for x in res["items"] %}{% set inv = invoices[x.invoice_id] %}
+      <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
+        <div class="font-semibold {{ ui.H }}">Invoice {{ inv.invoice_no or inv.id }} · {{ ui.car_title(inv.field("year"), inv.field("make"), inv.field("model"), inv.field("color")) }}</div>
+        <ul class="mt-2 space-y-1 text-base">
+          {% for a in x.agree %}<li class="flex gap-2 text-emerald-800 dark:text-emerald-300">{{ ui.icon("same", "mt-0.5 h-5 w-5 shrink-0") }}<span>{{ a|sentence }}</span></li>{% endfor %}
+          {% for d in x.disagree %}<li class="flex gap-2 text-rose-800 dark:text-rose-300">{{ ui.icon("different", "mt-0.5 h-5 w-5 shrink-0") }}<span>{{ d|sentence }}</span></li>{% endfor %}
+          {% if not x.agree and not x.disagree %}<li class="{{ ui.MUTED }}">Nothing to compare.</li>{% endif %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+
+  <p class="text-center text-base {{ ui.MUTED }}">Nothing has been saved. Your photos are deleted after an hour unless you save them to an invoice.</p>
+  {% endif %}
+</div>

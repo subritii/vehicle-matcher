@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Vehicles{% endblock %}
+{% block content %}
+{{ ui.page_header("Vehicles", "Every car with its invoice and photos. Open a car to see what was read from each.") }}
+
+<div class="mb-8 flex flex-wrap gap-2" role="tablist">
+  {% for key, label, n in [("linked", "Matched", linked|length), ("no_photos", "Invoices without photos", no_photos_count), ("no_invoice", "Photos without an invoice", no_invoice|length)] %}
+    <a href="/vehicles?show={{ key }}" role="tab" aria-selected="{{ 'true' if show == key else 'false' }}"
+       class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-base font-semibold transition {{ 'bg-blue-700 text-white shadow-sm dark:bg-blue-600' if show == key else 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800' }}">
+      {{ label }} <span class="tabular-nums opacity-70">{{ n }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+{% macro exterior_first(photos) -%}
+  {%- set ext = photos|selectattr("shot_type", "equalto", "exterior")|list -%}
+  {{- (ext + photos|rejectattr("shot_type", "equalto", "exterior")|list)[0].thumb_path if photos else "" -}}
+{%- endmacro %}
+
+{% if show == "no_photos" %}
+  <p class="mb-6 text-lg {{ ui.MUTED }}">These invoices are waiting for photos of their car.</p>
+  {% if not no_photos_count %}{{ ui.empty_state("Every invoice has its photos ✓", "No invoice is waiting for photos.") }}{% else %}
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {% for inv in no_photos %}
+    <a href="/vehicles/{{ inv.id }}" class="{{ ui.CARD }} group flex gap-5 p-6 transition hover:shadow-lg">
+      <img src="/media/{{ inv.image_path }}" alt="" loading="lazy" class="h-28 w-[5.5rem] shrink-0 rounded-lg border border-slate-200 bg-white object-cover object-top dark:border-slate-700">
+      <div class="min-w-0">
+        <div class="text-xl font-semibold {{ ui.H }}">{{ ui.car_title(inv.field("year"), inv.field("make"), inv.field("model")) }}</div>
+        <div class="mt-1 {{ ui.MUTED }}">Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</div>
+        <div class="mt-1 truncate {{ ui.MUTED }}">{{ inv.vendor or "" }}</div>
+        <div class="mt-3">{{ ui.status("none", "No photos yet") }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% if no_photos_count > no_photos|length %}
+  <div class="mt-8 flex flex-col items-center gap-3">
+    <p class="text-base {{ ui.MUTED }}">Showing the newest {{ no_photos|length }} of {{ no_photos_count }} invoices.</p>
+    <a href="/vehicles?show=no_photos&limit={{ limit + page }}" class="{{ ui.BTN2 }}">Show more</a>
+  </div>
+  {% endif %}
+  {% endif %}
+
+{% elif show == "no_invoice" %}
+  <p class="mb-6 text-lg {{ ui.MUTED }}">Photos of these cars came in, but no invoice fits them yet.</p>
+  {% if not no_invoice %}{{ ui.empty_state("Every photo set has an invoice ✓", "Nothing is waiting for an invoice.") }}{% else %}
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {% for c in no_invoice %}{% set s = c.summary_json %}
+    <a href="/sets/{{ c.id }}" class="{{ ui.CARD }} group block overflow-hidden transition hover:shadow-lg">
+      <img src="/media/{{ exterior_first(c.photos) }}" alt="" loading="lazy" class="aspect-[16/10] w-full bg-slate-100 object-cover dark:bg-slate-800">
+      <div class="p-6">
+        <div class="text-xl font-semibold {{ ui.H }}">{{ ui.car_title(s.year, s.make, s.model, s.color) if (s.make or s.color) else "Unknown car" }}</div>
+        <div class="mt-1 {{ ui.MUTED }}">{{ c.photos|length }} photo{{ "s" if c.photos|length != 1 }}{% if s.time %} · {{ s.time[:10] }}{% endif %}</div>
+        <div class="mt-4">{{ ui.cluster_status(c) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+{% else %}
+  {% if not linked %}{{ ui.empty_state("No matched cars yet", "Matched cars appear here.", "/review", "See what needs your check") }}{% else %}
+  <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    {% for c in linked %}{% set inv = c.invoice %}{% set v = c.vehicle %}
+    <a href="/vehicles/{{ inv.id }}" class="{{ ui.CARD }} group block overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg">
+      <img src="/media/{{ exterior_first(c.photos) }}" alt="" loading="lazy" class="aspect-[16/10] w-full bg-slate-100 object-cover dark:bg-slate-800">
+      <div class="p-6">
+        <div class="text-xl font-semibold leading-snug {{ ui.H }}">{{ ui.car_title(v.year, v.make, v.model, v.color) if v else "Car" }}</div>
+        <div class="mt-1.5 {{ ui.MUTED }}">Invoice {{ inv.invoice_no or inv.id }}{% if inv.date %} · {{ inv.date.strftime("%b %d, %Y") }}{% endif %}</div>
+        <div class="mt-4">{{ ui.cluster_status(c) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,85 @@
+{% import "_ui.html" as ui %}
+{% set steps = job.steps_json %}
+{% set finished = steps|selectattr("status", "in", ["done", "skipped"])|list|length %}
+{% set active_job = job.status in ("queued", "running") %}
+{% set current = steps|selectattr("status", "equalto", "running")|first %}
+<div id="job-status" {% if active_job %}hx-get="/upload/{{ job.id }}/status" hx-trigger="every 1s" hx-swap="outerHTML"{% endif %} class="space-y-8">
+
+  {% if job.status != "done" %}
+  <section class="{{ ui.CARD }} p-6 sm:p-8">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="text-2xl font-semibold {{ ui.H }}">
+        {% if job.status == "failed" %}Something went wrong{% elif current %}{{ current.label }}{% else %}Waiting to start…{% endif %}
+      </h2>
+      <span class="text-base tabular-nums {{ ui.MUTED }}">Step {{ [finished + 1, steps|length]|min }} of {{ steps|length }}</span>
+    </div>
+    <div class="mt-5 h-4 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      <div class="h-full rounded-full transition-all duration-500 {{ 'bg-rose-500' if job.status == 'failed' else 'bg-blue-700 pulse dark:bg-blue-500' }}" style="width: {{ [6, 100 * finished / steps|length]|max }}%"></div>
+    </div>
+    <ol class="mt-6 space-y-3">
+      {% for s in steps %}
+      <li class="flex items-start gap-3 text-base">
+        <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full
+          {{ {'done': 'bg-emerald-500 text-white', 'running': 'bg-blue-700 text-white dark:bg-blue-500', 'skipped': 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400', 'failed': 'bg-rose-500 text-white'}.get(s.status, 'border-2 border-slate-300 dark:border-slate-600') }}">
+          {% if s.status == "done" %}{{ ui.icon("same", "h-4 w-4") }}{% elif s.status == "running" %}<svg class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>{% elif s.status == "skipped" %}–{% elif s.status == "failed" %}!{% endif %}
+        </span>
+        <div>
+          <div class="{{ 'font-semibold ' ~ ui.H if s.status == 'running' else (ui.H if s.status == 'done' else ui.MUTED) }}">{{ s.label }}</div>
+          {% if s.detail %}<div class="text-sm {{ ui.MUTED }}">{{ s.detail }}</div>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% if job.error %}<p class="mt-6 rounded-xl bg-rose-50 p-4 text-base text-rose-900 dark:bg-rose-950/60 dark:text-rose-100">{{ job.error }}</p>{% endif %}
+    {% if active_job %}<p class="mt-6 text-base {{ ui.MUTED }}">Files seen before take seconds. New photos take about 5 seconds each, or about 25 seconds each when the AI reads them.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  {% if job.status == "done" %}
+    <p class="flex items-center gap-2 text-lg font-semibold text-emerald-800 dark:text-emerald-200">{{ ui.icon("matched", "h-6 w-6") }}All steps finished. Here is what happened:</p>
+    {% for c in clusters %}{% set s = c.summary_json %}{% set inv2 = c.invoice %}
+    <section class="{{ ui.CARD }} overflow-hidden">
+      <div class="p-6 sm:p-8">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <h2 class="text-2xl font-bold {{ ui.H }} sm:text-3xl">
+            {%- if inv2 and inv2.vehicle %}{{ ui.car_title(inv2.vehicle.year, inv2.vehicle.make, inv2.vehicle.model, inv2.vehicle.color) }}
+            {%- else %}{{ ui.car_title(s.year, s.make, s.model, s.color) if (s.make or s.color) else "Your photos" }}{% endif -%}
+          </h2>
+          {{ ui.cluster_status(c, big=True) }}
+        </div>
+        <div class="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {% for p in c.photos[:6] %}<img src="/media/{{ p.thumb_path }}" alt="{{ ui.shot_label(p.shot_type) }}" class="aspect-square w-full rounded-lg object-cover">{% endfor %}
+        </div>
+      </div>
+      <div class="flex flex-col gap-4 border-t border-slate-100 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:px-8 dark:border-slate-800 dark:bg-slate-800/40">
+        {% if c.status == "linked" %}
+          <p class="flex-1 text-lg text-emerald-900 dark:text-emerald-100">{{ match_sentence(c) }}</p>
+          <a href="/vehicles/{{ c.invoice_id }}" class="{{ ui.BTN }}">Open this car</a>
+        {% elif c.status == "review" %}
+          <p class="flex-1 text-lg {{ ui.H }}">{{ plain_reasons(c.reasons_json)[0] if c.reasons_json else "The tool wasn't sure." }}</p>
+          <a href="/review/{{ c.id }}" class="{{ ui.BTN }}">Check it now</a>
+        {% else %}
+          <p class="flex-1 text-lg {{ ui.H }}">No invoice fits these photos yet.</p>
+          <a href="/sets/{{ c.id }}" class="{{ ui.BTN2 }}">Open</a>
+        {% endif %}
+      </div>
+    </section>
+    {% endfor %}
+    {% if not clusters and inv %}
+      <div class="flex items-start gap-4 rounded-2xl border border-slate-200 bg-slate-100 px-6 py-5 dark:border-slate-700 dark:bg-slate-800/60">
+        <span class="text-slate-500">{{ ui.icon("none", "h-7 w-7") }}</span>
+        <p class="text-lg {{ ui.H }}">The invoice was read. No photos were uploaded, so it waits for photos of its car.</p>
+      </div>
+    {% endif %}
+    {% if inv %}
+    <section class="{{ ui.CARD }} flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
+      <img src="/media/{{ inv.image_path }}" alt="" class="h-28 w-[5.5rem] shrink-0 rounded-lg border border-slate-200 bg-white object-cover object-top dark:border-slate-700">
+      <div class="min-w-0 flex-1">
+        <h3 class="text-xl font-semibold {{ ui.H }}">The invoice</h3>
+        <p class="mt-1 text-base {{ ui.MUTED }}">{{ inv.vendor or "Unknown shop" }}{% if inv.invoice_no %} · Invoice {{ inv.invoice_no }}{% endif %} · {% set n = inv.extracted_json.fields|length %}{{ n }} detail{{ "s" if n != 1 }} read{% if inv.extracted_json.vin_trusted %} · VIN confirmed{% endif %}</p>
+      </div>
+      <a href="/vehicles/{{ inv.id }}" class="{{ ui.LINK }}">See what was read</a>
+    </section>
+    {% endif %}
+  {% endif %}
+</div>

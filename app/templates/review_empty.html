@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Needs your check{% endblock %}
+{% block content %}
+{{ ui.page_header("Needs your check", "Cars the tool wasn't sure about wait here for a quick yes or no from you.") }}
+{% if undo %}
+<div class="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-base dark:border-emerald-800 dark:bg-emerald-950/50" role="status">
+  <span class="text-emerald-600 dark:text-emerald-400">{{ ui.icon("matched", "h-6 w-6") }}</span>
+  <span class="text-emerald-900 dark:text-emerald-100">{{ undo.text }}</span>
+  <form method="post" action="/review/{{ undo.cluster_id }}/undo" class="ml-auto">
+    <button data-hotkey="u" class="inline-flex items-center rounded-xl border border-emerald-300 bg-white px-4 py-2 font-semibold text-emerald-900 ring-emerald-300 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-100 dark:hover:bg-emerald-900">Undo {{ ui.kbd("U") }}</button>
+  </form>
+</div>
+{% endif %}
+{{ ui.empty_state("Nothing needs your check right now ✓", "New cars the tool isn't sure about will show up here.", "/vehicles", "See all vehicles") }}
+{% endblock %}

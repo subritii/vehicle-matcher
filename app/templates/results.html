@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}How well it works{% endblock %}
+
+{% macro md_table(t) %}
+  <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+  <table class="w-full text-base">
+    <thead class="bg-slate-50 text-left text-sm font-semibold {{ ui.MUTED }} dark:bg-slate-800/60">
+      <tr>{% for h in t.header %}<th class="whitespace-nowrap px-4 py-3">{{ h }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+      {% for row in t.rows %}
+      <tr>{% for cell in row %}<td class="px-4 py-2.5 align-top {{ 'font-semibold ' ~ ui.H if cell.bold }} {{ 'min-w-[12rem]' if loop.first }}">{{ cell.text }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+{% endmacro %}
+
+{% macro pair_bar(a, b) %}
+  <div class="space-y-1.5">
+    <div class="flex items-center gap-3"><div class="h-3 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full bg-slate-400 dark:bg-slate-500" style="width: {{ a }}%"></div></div><span class="w-12 text-right text-base tabular-nums {{ ui.MUTED }}">{{ "%.0f"|format(a) }}%</span></div>
+    <div class="flex items-center gap-3"><div class="h-3 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><div class="h-full rounded-full bg-blue-700 dark:bg-blue-500" style="width: {{ b }}%"></div></div><span class="w-12 text-right text-base font-semibold tabular-nums {{ ui.H }}">{{ "%.0f"|format(b) }}%</span></div>
+  </div>
+{% endmacro %}
+
+{% block content %}
+{{ ui.page_header("How well it works", "Tested on 36 made-up repair invoices (each as a PDF, a scan and a phone photo) and 148 car photos, with and without the AI model.") }}
+{% set inv = r.invoice %}{% set m = r.matching %}
+
+{# Three takeaways #}
+<section class="grid gap-5 lg:grid-cols-3" aria-label="Key results">
+  {% if inv %}
+  <div class="{{ ui.CARD }} p-7 sm:p-8">
+    <div class="text-blue-700 dark:text-blue-400">{{ ui.icon("sparkle", "h-8 w-8") }}</div>
+    <p class="mt-4 text-2xl font-bold leading-snug {{ ui.H }}">AI raised accuracy on phone photos of invoices from {{ "%.0f"|format(inv.totals.photo[0]) }}% to {{ "%.0f"|format(inv.totals.photo[1]) }}%</p>
+    <p class="mt-3 text-base {{ ui.MUTED }}">Scanned invoices: {{ "%.0f"|format(inv.totals.scan[0]) }}% to {{ "%.0f"|format(inv.totals.scan[1]) }}%. Digital PDFs were already {{ "%.0f"|format(inv.totals.pdf[0]) }}% right.</p>
+  </div>
+  {% endif %}
+  {% if m %}
+  <div class="rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-7 shadow-soft sm:p-8 dark:border-emerald-800 dark:bg-emerald-950/50">
+    <div class="text-emerald-700 dark:text-emerald-300">{{ ui.icon("shield", "h-8 w-8") }}</div>
+    <p class="mt-4 text-2xl font-bold leading-snug text-emerald-900 dark:text-emerald-100">{{ m.bars.ai.wrong }} wrong automatic matches</p>
+    <p class="mt-3 text-base text-emerald-900/80 dark:text-emerald-200/80">With and without AI. When the tool isn&rsquo;t sure, it asks a person instead of guessing.</p>
+  </div>
+  <div class="{{ ui.CARD }} p-7 sm:p-8">
+    <div class="text-blue-700 dark:text-blue-400">{{ ui.icon("matched", "h-8 w-8") }}</div>
+    <p class="mt-4 text-2xl font-bold leading-snug {{ ui.H }}">{{ "%.0f"|format(m.bars.ai.auto) }}% of cars matched without any human work</p>
+    <p class="mt-3 text-base {{ ui.MUTED }}">Up from {{ "%.0f"|format(m.bars.rules.auto) }}% without the AI model.</p>
+  </div>
+  {% endif %}
+</section>
+
+{% if m %}
+<section class="{{ ui.CARD }} mt-10 p-6 sm:p-8" aria-labelledby="where">
+  <h2 id="where" class="text-2xl font-bold {{ ui.H }}">What happens to each car</h2>
+  <p class="mt-2 text-lg {{ ui.MUTED }}">Share of cars in each outcome. The AI moves cars from &ldquo;no invoice found&rdquo; and &ldquo;needs your check&rdquo; to &ldquo;matched&rdquo;.</p>
+  {% for mode, label in [("rules", "Without AI"), ("ai", "With AI")] %}
+  {% set b = m.bars[mode] %}
+  <div class="mt-6">
+    <div class="mb-2 text-lg font-semibold {{ ui.H }}">{{ label }}</div>
+    <div class="flex h-11 overflow-hidden rounded-xl text-base font-semibold">
+      <div class="grid place-items-center bg-emerald-500 text-white" style="width: {{ b.auto }}%">{{ "%.0f"|format(b.auto) }}%</div>
+      <div class="grid place-items-center bg-amber-400 text-amber-950" style="width: {{ b.review }}%">{{ "%.0f"|format(b.review) }}%</div>
+      <div class="grid place-items-center bg-slate-300 text-slate-800 dark:bg-slate-600 dark:text-slate-100" style="width: {{ b.unmatched }}%">{{ "%.0f"|format(b.unmatched) }}%</div>
+    </div>
+  </div>
+  {% endfor %}
+  <div class="mt-5 flex flex-wrap gap-x-6 gap-y-2">{{ ui.status("matched") }}{{ ui.status("check") }}{{ ui.status("none") }}</div>
+</section>
+{% endif %}
+
+{% if inv %}
+<section class="{{ ui.CARD }} mt-10 p-6 sm:p-8" aria-labelledby="fields">
+  <h2 id="fields" class="text-2xl font-bold {{ ui.H }}">Invoice details read correctly</h2>
+  <p class="mt-2 text-lg {{ ui.MUTED }}">For scanned invoices and phone photos of invoices, where reading is hardest.</p>
+  <div class="mt-4 flex flex-wrap gap-6 text-base {{ ui.MUTED }}">
+    <span class="inline-flex items-center gap-2"><span class="h-3 w-8 rounded-full bg-slate-400 dark:bg-slate-500"></span>Without AI</span>
+    <span class="inline-flex items-center gap-2"><span class="h-3 w-8 rounded-full bg-blue-700 dark:bg-blue-500"></span>With AI</span>
+  </div>
+  <div class="mt-6 grid gap-x-10 gap-y-5 md:grid-cols-[9rem_1fr_1fr]">
+    <div class="hidden md:block"></div>
+    <div class="hidden text-sm font-semibold uppercase tracking-wide md:block {{ ui.MUTED }}">Scanned invoices</div>
+    <div class="hidden text-sm font-semibold uppercase tracking-wide md:block {{ ui.MUTED }}">Phone photos of invoices</div>
+    {% for f in inv.fields %}
+      <div class="self-center text-base font-semibold {{ ui.H }}">{{ f.label }}</div>
+      <div><span class="mb-1 block text-sm md:hidden {{ ui.MUTED }}">Scans</span>{{ pair_bar(f.scan[0], f.scan[1]) }}</div>
+      <div><span class="mb-1 block text-sm md:hidden {{ ui.MUTED }}">Phone photos</span>{{ pair_bar(f.photo[0], f.photo[1]) }}</div>
+    {% endfor %}
+    <div class="self-center border-t border-slate-200 pt-4 text-lg font-bold dark:border-slate-700 {{ ui.H }}">All details</div>
+    <div class="border-t border-slate-200 pt-4 dark:border-slate-700">{{ pair_bar(inv.totals.scan[0], inv.totals.scan[1]) }}</div>
+    <div class="border-t border-slate-200 pt-4 dark:border-slate-700">{{ pair_bar(inv.totals.photo[0], inv.totals.photo[1]) }}</div>
+  </div>
+</section>
+{% endif %}
+
+<section class="{{ ui.CARD }} mt-10 p-6 sm:p-8">
+  {% call ui.details("Show full tables") %}
+  <div class="space-y-10">
+    {% if m %}
+    <div><h3 class="mb-3 text-xl font-semibold {{ ui.H }}">Matching and grouping photos</h3>{{ md_table(m.table) }}</div>
+    {% if m.hard_cases %}<div><h3 class="mb-1 text-xl font-semibold {{ ui.H }}">Hard cases</h3><p class="mb-3 {{ ui.MUTED }}">Look-alike cars on the same day, photo sets with no VIN or plate, photos without a date, sets without an invoice, an invoice without photos.</p>{{ md_table(m.hard_cases) }}</div>{% endif %}
+    {% endif %}
+    {% if r.photos and r.photos.per_type %}<div><h3 class="mb-3 text-xl font-semibold {{ ui.H }}">Reading photos, by type of photo</h3>{{ md_table(r.photos.per_type) }}</div>{% endif %}
+    {% if r.photos and r.photos.trust %}<div><h3 class="mb-1 text-xl font-semibold {{ ui.H }}">Which reads may match on their own</h3><p class="mb-3 {{ ui.MUTED }}">A VIN or plate is confirmed only when two independent readers agree. Target: 0 wrong values confirmed.</p>{{ md_table(r.photos.trust) }}</div>{% endif %}
+    {% if inv and inv.counts %}
+    <div class="text-base {{ ui.MUTED }}">
+      {% for name, cols in inv.counts.items() %}
+      <p><span>{{ name|replace("wrong+trusted", "Wrong VINs confirmed")|replace("needs review", "Invoices flagged for a check")|replace("VIN trusted", "VINs confirmed") }}</span>
+        (PDF · scan · photo, without AI &rarr; with AI): <span class="font-semibold tabular-nums {{ ui.H }}">{% for k in ("pdf", "scan", "photo") %}{{ cols[k][0]|int }}&rarr;{{ cols[k][1]|int }}{{ " · " if not loop.last }}{% endfor %}</span></p>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <p class="text-sm {{ ui.MUTED }}">AI model: qwen3.5 4B via Ollama on an 8 GB laptop. Source: the reports in <span class="font-mono">results/</span>.</p>
+  </div>
+  {% endcall %}
+</section>
+{% endblock %}
