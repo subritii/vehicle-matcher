@@ -110,6 +110,21 @@ def test_demo_photos_have_neutral_names_and_an_answer_key(tmp_path, plan, monkey
     assert exif.get_ifd(0x8769)[0x9003].startswith("2026:10:13")  # taken today, on the lot
 
 
+def test_demo_photos_folder_is_emptied_not_replaced(tmp_path, plan, monkeypatch):
+    """A Docker bind mount can't be removed and recreated: only its contents are replaced."""
+    ext = {c: [{"photo": "x.jpg", "make": c[0], "model": c[1], "color": c[2]}] for c in ALL_EXTERIORS}
+    monkeypatch.setattr(sd, "exterior_rows", lambda: ext)
+    monkeypatch.setattr(mf, "_exterior_image", lambda row, rng: mf.Image.new("RGB", (64, 48), (200, 200, 200)))
+    out = tmp_path / "demo_photos"
+    (out / "old").mkdir(parents=True)
+    (out / "car9_VIN.jpg").write_bytes(b"old")
+    removed = []
+    monkeypatch.setattr(sd.shutil, "rmtree", lambda p, *a, **k: removed.append(Path(p)) or None)
+    sd.write_demo_photos(plan, out, seed=7, now=datetime(2026, 10, 13, 15, 0), invoice_count=len(plan.invoices))
+    assert out not in removed and removed == [out / "old"]
+    assert not (out / "car9_VIN.jpg").exists() and (out / "car1_VIN.jpg").exists()
+
+
 def test_reset_restores_the_snapshot_in_place(tmp_path):
     from app.models import Invoice, make_sessionmaker
 

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Turned off in the showcase{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl">
+  <section class="{{ ui.CARD }} px-6 py-12 text-center sm:px-10">
+    <div class="mx-auto grid h-16 w-16 place-items-center rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">{{ ui.icon("upload", "h-8 w-8") }}</div>
+    <h1 class="mt-5 text-2xl font-bold {{ ui.H }}">That's turned off in the showcase</h1>
+    <p class="mx-auto mt-3 max-w-md text-lg {{ ui.MUTED }}">This public demo is read-only: it shows results the pipeline produced on a laptop, and nothing you do here is saved. Uploads, photo lookups and saving need the full version, which runs OCR, the plate reader and the AI model.</p>
+    <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+      <a href="{{ docker_url }}" class="{{ ui.BTN }}">Run it yourself with Docker</a>
+      <a href="/find" class="{{ ui.BTN2 }}">Try the sample photos</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

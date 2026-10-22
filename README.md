@@ -2,6 +2,20 @@
 
 **Snap a photo of a car, get its repair invoice: matched automatically, with a person asked only when it isn't sure.**
 
+**▶ Live demo:** [coming soon](LIVE_DEMO_LINK_HERE) (read-only showcase, nothing to install)
+
+## Run it yourself
+
+```bash
+git clone https://github.com/subritii/vehicle-matcher && cd vehicle-matcher
+docker compose --profile full up --build   # then open http://localhost:8000
+```
+
+On a Mac, run the AI model natively instead (Docker can't use the Mac's GPU): `ollama serve`, `ollama pull qwen3.5:4b-q4_K_M`, then `docker compose --profile mac up --build`.
+
+The live demo is a read-only showcase: it serves results that the same pipeline produced on a laptop, so it fits on a free 512 MB server, and your review decisions last only for your visit.
+The Docker version is the whole app, with OCR, the plate reader and the local AI model reading your own invoices and photos live (memory needs and a lighter rules-only option: [Docker](#docker)).
+
 ![Home page](docs/screenshots/home.png)
 
 ## What it does
@@ -90,6 +104,44 @@ python tools/reset_scale_demo.py                         # back to the starting 
 
 Exterior photos come from Wikimedia Commons (licenses and authors in [`tests/fixtures/exteriors/exteriors.csv`](tests/fixtures/exteriors/exteriors.csv)). The smaller demo with review cases: `python tools/make_fixtures.py --difficulty hard && python tools/seed_demo.py`, then `uvicorn app.main:app`.
 
+### Docker
+
+| | Command | Docker Desktop memory |
+|---|---|---|
+| Full: app + Ollama with `qwen3.5:4b-q4_K_M`, both in Docker | `docker compose --profile full up --build` | 6–8 GB |
+| Mac: app in Docker, Ollama running natively on the GPU | `docker compose --profile mac up --build` | about 3 GB (+3.3 GB for native Ollama) |
+| Lite: rules + OCR only, no AI model | `docker compose --profile lite up --build` | about 3 GB |
+
+Set the memory in Docker Desktop under Settings → Resources. The AI model takes about 3.3–4.5 GB while it reads a photo and OCR about 1.5 GB; the app loads one at a time. Downloads need about 12 GB of disk (app image 2 GB, Ollama image and model 6 GB, OCR models).
+
+**On a Mac, use the `mac` profile.** Docker on macOS has no GPU access, so Ollama in a container runs on the CPU: one photo took over 5 minutes and hit the app's time limit on an 8 GB M1, against about 30 s per photo with native Ollama. The `full` profile is for Linux; on an 8 GB Mac, quit other heavy apps first.
+
+- **First start** (10–20 minutes, mostly downloads): Ollama pulls the model (3.3 GB) and the app downloads the OCR and plate-reader models, then builds the scale demo: 200 invoices over 12 months, read by the real pipeline. If the Wikimedia Commons car photos aren't in your checkout, set `WIKIMEDIA_CONTACT` to your email or a URL first (Wikimedia's API policy asks for it) and they are downloaded.
+- **Photos to try** land in `./demo_photos/` on your computer (6 cars on the lot, answers in `ANSWERS.md`): upload them on the Find page.
+- **Later starts** restore the demo database from its snapshot in seconds, so every start is a clean demo (`docker compose --profile full restart` resets it). The database, caches and downloaded models stay in named volumes; `docker compose --profile full down -v` removes them (the `ollama` volume holds a 3.3 GB copy of the model).
+- The app is published on `127.0.0.1:8000` only, never on your network.
+
+### Showcase mode (the live demo)
+
+`DEMO_MODE=showcase` serves a read-only bundle in `showcase/`, built ahead of time with the full pipeline by `python tools/build_showcase.py` (Ollama running; it uses new photos of four cars, not the demo's or `demo_photos/`). It loads no OCR, plate reader or AI model and fits in 512 MB. The Find page becomes a gallery of the saved lookups, each with its full *How it found this* panel. Uploads and *Save to this invoice* are turned off, and review decisions go to a private copy of the database that lasts for the visitor's session. It accepts public visitors with a per-visitor rate limit (`SHOWCASE_RATE_LIMIT`, `SHOWCASE_POST_LIMIT` per minute), serves only the images its pages use, and credits the Wikimedia Commons photos on `/credits`.
+
+```bash
+DEMO_MODE=showcase uvicorn app.main:app                                    # locally
+docker build -f Dockerfile.showcase -t vehicle-matcher-showcase . && docker run -p 127.0.0.1:8000:8000 vehicle-matcher-showcase
+```
+
+### Deploy the live demo to Render (free)
+
+[`render.yaml`](render.yaml) describes one free web service built from `Dockerfile.showcase`.
+
+1. Push the repo, including the `showcase/` folder, to GitHub.
+2. Sign in at [render.com](https://render.com) with GitHub and allow Render to read the `vehicle-matcher` repo.
+3. **New → Blueprint**, pick the repo and branch `main`. Render reads `render.yaml` and shows one free web service, `vehicle-matcher-demo`. Click **Apply** (or **Deploy Blueprint**).
+4. Wait for the build (3–5 minutes) and for the health check on `/healthz` to pass, then open the `https://vehicle-matcher-demo.onrender.com` link (Render may add a suffix if the name is taken).
+5. Put that link in place of `LIVE_DEMO_LINK_HERE` at the top of this README.
+
+A free service sleeps after 15 minutes without visitors; the first visit after that takes about a minute to wake it. Auto-deploy is off: after you rebuild `showcase/` and push, deploy with **Manual Deploy → Deploy latest commit**.
+
 ### Stack and layout
 
 FastAPI, Jinja2, HTMX and Tailwind (no build step), SQLite via SQLAlchemy.
@@ -103,4 +155,4 @@ tools/         make_fixtures.py, seed_*.py, *_accuracy.py  test data, demo data,
 results/       accuracy reports behind the numbers above
 ```
 
-Tests: `pytest` (623 tests: VIN rules, extraction, clustering, scoring, the indexed search against a full scan, and the web pages).
+Tests: `pytest` (678 tests: VIN rules, extraction, clustering, scoring, the indexed search against a full scan, and the web pages).

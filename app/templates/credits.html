@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% block title %}Photo credits{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-4xl">
+  {{ ui.page_header("Photo credits", "The car exterior photos come from Wikimedia Commons, used under their free licenses. The demo shows them cropped, mirrored or re-lit. Everything else (invoices, VIN stickers, plates, odometers) is generated.") }}
+  {% if credits %}
+  <ul class="divide-y divide-slate-100 {{ ui.CARD }} dark:divide-slate-800">
+    {% for c in credits %}
+    <li class="flex flex-col gap-1 px-6 py-4 sm:px-8">
+      <a href="{{ c.page_url }}" class="{{ ui.LINK }}" rel="noopener">{{ c.title|replace("File:", "") }}</a>
+      <span class="text-base {{ ui.MUTED }}">by {{ c.author or "unknown" }} ·
+        {% if c.license_url %}<a href="{{ c.license_url }}" class="underline underline-offset-2" rel="noopener license">{{ c.license }}</a>{% else %}{{ c.license }}{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-lg {{ ui.MUTED }}">No Wikimedia Commons photos are used in this demo.</p>
+  {% endif %}
+</div>
+{% endblock %}

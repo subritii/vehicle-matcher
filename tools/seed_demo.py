@@ -7,7 +7,7 @@ or model runs for known files. One vehicle (--sample) is kept out and copied to
 data/media/demo/sample/ for the Upload page.
 
 Usage:
-    python tools/seed_demo.py [--model NAME | --no-vision] [--sample inv_057]
+    python tools/seed_demo.py [--model NAME | --no-vision] [--sample inv_057] [--data DIR]
 """
 
 from __future__ import annotations
@@ -48,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model", default=DEFAULT_MODEL, help=f"vision model whose cached answers to use ({DEFAULT_MODEL})")
     ap.add_argument("--no-vision", action="store_true", help="rules + OCR + barcode + fast-alpr only")
     ap.add_argument("--sample", default="inv_057", help="invoice (and its photos) kept out for the Upload page")
+    ap.add_argument("--data", help="data folder for the database and media (default: DATA_DIR / DATABASE_URL); "
+                                   "its extract_cache/ and ocr_cache/ are the caches used")
     args = ap.parse_args(argv)
 
     key = FIXTURES / "matching_key.csv"
@@ -65,7 +67,11 @@ def main(argv: list[str] | None = None) -> int:
     photo_rows = [r for r in photo_rows if r["invoice_id"] != args.sample]
     demo_files = {iid: p for iid, p in files.items() if iid != args.sample}
 
-    settings = get_settings()
+    if args.data:
+        d = Path(args.data).resolve()
+        settings = get_settings(data_dir=d, database_url=f"sqlite:///{d / 'app.db'}")  # never a .env DATABASE_URL
+    else:
+        settings = get_settings()
     reset_database(settings.database_url)  # in place: a running app keeps working
     storage = LocalStorage(settings.media_dir)
     for prefix in ("demo", "uploads", "found"):

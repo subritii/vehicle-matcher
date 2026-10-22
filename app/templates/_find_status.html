@@ -85,10 +85,14 @@
         </a>
       </div>
       <div class="flex flex-col gap-3 border-t border-slate-100 bg-slate-50 px-6 py-5 sm:flex-row sm:items-center sm:px-8 dark:border-slate-800 dark:bg-slate-800/40">
+        {% if showcase %}
+        <button type="button" disabled title="Saving is turned off in the showcase" class="{{ ui.BTN }} w-full cursor-not-allowed opacity-50 sm:w-auto">Save to this invoice</button>
+        {% else %}
         <form method="post" action="/find/{{ item.token }}/save">
           <input type="hidden" name="invoice_id" value="{{ inv.id }}">
           <button class="{{ ui.BTN }} w-full sm:w-auto">Save to this invoice</button>
         </form>
+        {% endif %}
         <a href="/vehicles/{{ inv.id }}" class="{{ ui.BTN2 }}">Open invoice</a>
         <span class="text-base sm:ml-auto {{ ui.MUTED }}">{% if x.linked %}This car already has photos; saving adds yours.{% else %}This invoice has no photos yet.{% endif %}</span>
       </div>
@@ -120,10 +124,14 @@
             </div>
           </div>
           <div class="flex flex-col gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:px-7 dark:border-slate-800">
+            {% if showcase %}
+            <button type="button" disabled title="Saving is turned off in the showcase" class="{{ ui.BTN2 }} w-full cursor-not-allowed py-2.5 opacity-50 sm:w-auto">Save to this invoice</button>
+            {% else %}
             <form method="post" action="/find/{{ item.token }}/save">
               <input type="hidden" name="invoice_id" value="{{ inv.id }}">
               <button class="{{ ui.BTN2 }} w-full py-2.5 sm:w-auto">Save to this invoice</button>
             </form>
+            {% endif %}
             <a href="/vehicles/{{ inv.id }}" class="px-2 py-2 text-center {{ ui.LINK }}">Open invoice</a>
           </div>
         </article>
@@ -214,6 +222,13 @@
     {% endif %}
   </section>
 
+  {% if showcase %}
+  <p class="text-center text-base {{ ui.MUTED }}">
+    Saved result: this lookup ran on a laptop with the full pipeline{% if meta.vision_model %} (barcode reader, OCR, plate reader and the {{ meta.vision_model }} AI model){% endif %}{% if sample and sample.seconds >= 1 %} and took {{ "%.0f"|format(sample.seconds) }} seconds{% endif %}.
+    Saving is turned off in the showcase: <a href="{{ docker_url }}" class="{{ ui.LINK }}">run it yourself with Docker</a> to look up and save your own photos.
+  </p>
+  {% else %}
   <p class="text-center text-base {{ ui.MUTED }}">Nothing has been saved. Your photos are deleted after an hour unless you save them to an invoice.</p>
+  {% endif %}
   {% endif %}
 </div>

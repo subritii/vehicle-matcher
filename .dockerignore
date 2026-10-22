@@ -1,0 +1,14 @@
+# Never in an image: private data, local settings, the assistant's notes, build leftovers.
+.git
+.venv
+.env
+data
+demo_photos
+tests/fixtures/private
+tests/fixtures/synthetic
+tests/fixtures/synthetic_hard
+claude.md
+CLAUDE.md
+**/__pycache__
+**/*.pyc
+.pytest_cache

@@ -1,0 +1,1338 @@
+{
+ "meta": {
+  "vision_model": "qwen3.5:4b-q4_K_M",
+  "pipeline": "rules + OCR + barcode + plate reader + AI",
+  "invoices": 35,
+  "built_at": "2026-10-21T20:24:59"
+ },
+ "cars": [
+  {
+   "id": "car1",
+   "title": "Blue Nissan Altima",
+   "note": "Its invoice is in the system, without photos yet."
+  },
+  {
+   "id": "car2",
+   "title": "Blue Toyota Camry",
+   "note": "Back for a second visit: its invoice already has photos."
+  },
+  {
+   "id": "car3",
+   "title": "White Ford Escape",
+   "note": "Its invoice is in the system; no VIN photo this time."
+  },
+  {
+   "id": "car4",
+   "title": "Silver Toyota Corolla",
+   "note": "A car the shop has no invoice for."
+  }
+ ],
+ "samples": [
+  {
+   "id": "car1-vin",
+   "car": "car1",
+   "label": "VIN sticker",
+   "names": [
+    "car1_VIN.jpg"
+   ],
+   "seconds": 27.2,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_001",
+      "score": 120.0,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "VIN matches",
+       "make and model match",
+       "photo taken 1 day after the invoice"
+      ],
+      "disagree": [],
+      "highlight": "vin",
+      "linked": false,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": "1N4AL3AP3JN840633",
+     "vin_trusted": true,
+     "vin_source": "barcode",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": null,
+     "body_style": null,
+     "odometer": null,
+     "time": "2026-06-05T13:00:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": "NISSAN",
+     "model": "Altima",
+     "year": 2018
+    },
+    "searches": [
+     "Looked up VIN 1N4AL3AP3JN840633 among 35 invoices \u2192 1 exact match",
+     "Nissan, dated within a week of the photos \u2192 1 invoice",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The VIN in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed VIN.",
+    "photos": [
+     {
+      "name": "car1_VIN.jpg",
+      "type": "Door sticker",
+      "type_by": "AI",
+      "reads": [
+       [
+        "VIN",
+        "1N4AL3AP3JN840633",
+        "barcode"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car1-plate",
+   "car": "car1",
+   "label": "License plate",
+   "names": [
+    "car1_plate.jpg"
+   ],
+   "seconds": 27.2,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_001",
+      "score": 80.0,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "plate matches",
+       "photo taken 1 day after the invoice"
+      ],
+      "disagree": [],
+      "highlight": "plate",
+      "linked": false,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": "PBV1390",
+     "plate_state": "AZ",
+     "plate_trusted": true,
+     "color": null,
+     "body_style": null,
+     "odometer": null,
+     "time": "2026-06-05T13:01:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Looked up plate PBV1390 among 35 invoices \u2192 1 exact match",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The license plate and state in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed license plate and state.",
+    "photos": [
+     {
+      "name": "car1_plate.jpg",
+      "type": "License plate",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "PBV1390",
+        "plate reader"
+       ],
+       [
+        "State",
+        "AZ",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car1-odometer",
+   "car": "car1",
+   "label": "Odometer",
+   "names": [
+    "car1_odometer.jpg"
+   ],
+   "seconds": 29.5,
+   "result": {
+    "kind": "none",
+    "items": [],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": null,
+     "body_style": null,
+     "odometer": 55678,
+     "time": "2026-06-05T13:02:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Odometer 55,678 miles \u2192 no invoices within 500 miles",
+     "No invoice was close enough to compare in detail"
+    ],
+    "fits": null,
+    "why": "No invoice shares enough details with the photos. The invoice may not be in the system yet.",
+    "photos": [
+     {
+      "name": "car1_odometer.jpg",
+      "type": "Odometer",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Odometer",
+        "55,678 miles",
+        "OCR"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car1-exterior",
+   "car": "car1",
+   "label": "Outside",
+   "names": [
+    "car1_exterior.jpg"
+   ],
+   "seconds": 22.5,
+   "result": {
+    "kind": "many",
+    "items": [
+     {
+      "invoice_id": "inv_001",
+      "score": 18.0,
+      "confidence": "Low",
+      "pct": 18,
+      "agree": [
+       "color matches",
+       "photo taken 1 day after the invoice"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_033",
+      "score": 18.0,
+      "confidence": "Low",
+      "pct": 18,
+      "agree": [
+       "color matches",
+       "photo taken the same day as the invoice"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_007",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_032",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_036",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": "blue",
+     "body_style": "sedan",
+     "odometer": null,
+     "time": "2026-06-05T13:03:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Looked up plate ZMD395 among 35 invoices \u2192 no exact matches",
+     "Blue, dated within a week of the photos \u2192 2 invoices",
+     "Compared 2 invoices closely, detail by detail"
+    ],
+    "fits": {
+     "count": 7,
+     "what": "blue car"
+    },
+    "why": "7 invoices fit this description (blue car), and nothing in the photos tells them apart, so the tool doesn't pick one. Add a photo of the VIN sticker or the license plate to find the exact invoice.",
+    "photos": [
+     {
+      "name": "car1_exterior.jpg",
+      "type": "Outside of the car",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "ZMD395",
+        "plate reader"
+       ],
+       [
+        "State",
+        "HI",
+        "AI"
+       ],
+       [
+        "Color",
+        "Blue",
+        "AI"
+       ],
+       [
+        "Body style",
+        "sedan",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car1-all",
+   "car": "car1",
+   "label": "All photos",
+   "names": [
+    "car1_VIN.jpg",
+    "car1_plate.jpg",
+    "car1_odometer.jpg",
+    "car1_exterior.jpg"
+   ],
+   "seconds": 0.4,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_001",
+      "score": 198.0,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "VIN matches",
+       "plate matches",
+       "color and model match",
+       "photo taken 1 day after the invoice"
+      ],
+      "disagree": [
+       "odometer differs (55,678 vs 55 mi)"
+      ],
+      "highlight": "vin",
+      "linked": false,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": "1N4AL3AP3JN840633",
+     "vin_trusted": true,
+     "vin_source": "barcode",
+     "plate": "PBV1390",
+     "plate_state": "AZ",
+     "plate_trusted": true,
+     "color": "blue",
+     "body_style": "sedan",
+     "odometer": 55678,
+     "time": "2026-06-05T13:01:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": "NISSAN",
+     "model": "Altima",
+     "year": 2018
+    },
+    "searches": [
+     "Looked up VIN 1N4AL3AP3JN840633 among 35 invoices \u2192 1 exact match",
+     "Looked up plate PBV1390 among 35 invoices \u2192 1 exact match",
+     "Looked up plate ZMD395 among 35 invoices \u2192 no exact matches",
+     "Odometer 55,678 miles \u2192 no invoices within 500 miles",
+     "Blue or Nissan, dated within a week of the photos \u2192 2 invoices",
+     "Compared 2 invoices closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The VIN in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed VIN.",
+    "photos": [
+     {
+      "name": "car1_VIN.jpg",
+      "type": "Door sticker",
+      "type_by": "AI",
+      "reads": [
+       [
+        "VIN",
+        "1N4AL3AP3JN840633",
+        "barcode"
+       ]
+      ],
+      "notes": []
+     },
+     {
+      "name": "car1_plate.jpg",
+      "type": "License plate",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "PBV1390",
+        "plate reader"
+       ],
+       [
+        "State",
+        "AZ",
+        "AI"
+       ]
+      ],
+      "notes": []
+     },
+     {
+      "name": "car1_odometer.jpg",
+      "type": "Odometer",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Odometer",
+        "55,678 miles",
+        "OCR"
+       ]
+      ],
+      "notes": []
+     },
+     {
+      "name": "car1_exterior.jpg",
+      "type": "Outside of the car",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "ZMD395",
+        "plate reader"
+       ],
+       [
+        "State",
+        "HI",
+        "AI"
+       ],
+       [
+        "Color",
+        "Blue",
+        "AI"
+       ],
+       [
+        "Body style",
+        "sedan",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car2-vin",
+   "car": "car2",
+   "label": "VIN sticker",
+   "names": [
+    "car2_VIN.jpg"
+   ],
+   "seconds": 0.2,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_046",
+      "score": 116.7,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "VIN matches",
+       "make and model match",
+       "photo taken 3 days after the invoice"
+      ],
+      "disagree": [],
+      "highlight": "vin",
+      "linked": true,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": "4T1B11AK0RU717740",
+     "vin_trusted": true,
+     "vin_source": "barcode",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": null,
+     "body_style": null,
+     "odometer": null,
+     "time": "2026-04-10T12:00:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": "TOYOTA",
+     "model": "Camry",
+     "year": 2024
+    },
+    "searches": [
+     "Looked up VIN 4T1B11AK0RU717740 among 35 invoices \u2192 1 exact match",
+     "Toyota, dated within a week of the photos \u2192 1 invoice",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The VIN in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed VIN.",
+    "photos": [
+     {
+      "name": "car2_VIN.jpg",
+      "type": "Door sticker",
+      "type_by": "AI",
+      "reads": [
+       [
+        "VIN",
+        "4T1B11AK0RU717740",
+        "barcode"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car2-exterior",
+   "car": "car2",
+   "label": "Outside",
+   "names": [
+    "car2_exterior.jpg"
+   ],
+   "seconds": 0.1,
+   "result": {
+    "kind": "many",
+    "items": [
+     {
+      "invoice_id": "inv_046",
+      "score": 14.7,
+      "confidence": "Low",
+      "pct": 15,
+      "agree": [
+       "color matches",
+       "photo taken 3 days after the invoice"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_001",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_007",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_032",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_033",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": "blue",
+     "body_style": "sedan",
+     "odometer": null,
+     "time": "2026-04-10T12:01:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Blue, dated within a week of the photos \u2192 1 invoice",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": {
+     "count": 7,
+     "what": "blue car"
+    },
+    "why": "7 invoices fit this description (blue car), and nothing in the photos tells them apart, so the tool doesn't pick one. Add a photo of the VIN sticker or the license plate to find the exact invoice.",
+    "photos": [
+     {
+      "name": "car2_exterior.jpg",
+      "type": "Outside of the car",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Color",
+        "Blue",
+        "AI"
+       ],
+       [
+        "Body style",
+        "sedan",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car2-all",
+   "car": "car2",
+   "label": "All photos",
+   "names": [
+    "car2_VIN.jpg",
+    "car2_exterior.jpg"
+   ],
+   "seconds": 0.2,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_046",
+      "score": 124.7,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "VIN matches",
+       "color and model match",
+       "photo taken 3 days after the invoice"
+      ],
+      "disagree": [],
+      "highlight": "vin",
+      "linked": true,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": "4T1B11AK0RU717740",
+     "vin_trusted": true,
+     "vin_source": "barcode",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": "blue",
+     "body_style": "sedan",
+     "odometer": null,
+     "time": "2026-04-10T12:00:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": "TOYOTA",
+     "model": "Camry",
+     "year": 2024
+    },
+    "searches": [
+     "Looked up VIN 4T1B11AK0RU717740 among 35 invoices \u2192 1 exact match",
+     "Blue or Toyota, dated within a week of the photos \u2192 1 invoice",
+     "Compared 2 invoices closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The VIN in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed VIN.",
+    "photos": [
+     {
+      "name": "car2_VIN.jpg",
+      "type": "Door sticker",
+      "type_by": "AI",
+      "reads": [
+       [
+        "VIN",
+        "4T1B11AK0RU717740",
+        "barcode"
+       ]
+      ],
+      "notes": []
+     },
+     {
+      "name": "car2_exterior.jpg",
+      "type": "Outside of the car",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Color",
+        "Blue",
+        "AI"
+       ],
+       [
+        "Body style",
+        "sedan",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car3-plate",
+   "car": "car3",
+   "label": "License plate",
+   "names": [
+    "car3_plate.jpg"
+   ],
+   "seconds": 36.8,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_041",
+      "score": 76.7,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "plate matches",
+       "photo taken 3 days after the invoice"
+      ],
+      "disagree": [],
+      "highlight": "plate",
+      "linked": true,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": "CYM2460",
+     "plate_state": "AZ",
+     "plate_trusted": true,
+     "color": null,
+     "body_style": null,
+     "odometer": null,
+     "time": "2026-01-05T13:00:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Looked up plate CYM2460 among 35 invoices \u2192 1 exact match",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The license plate and state in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed license plate and state.",
+    "photos": [
+     {
+      "name": "car3_plate.jpg",
+      "type": "License plate",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "CYM2460",
+        "plate reader"
+       ],
+       [
+        "State",
+        "AZ",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car3-odometer",
+   "car": "car3",
+   "label": "Odometer",
+   "names": [
+    "car3_odometer.jpg"
+   ],
+   "seconds": 30.2,
+   "result": {
+    "kind": "possible",
+    "items": [
+     {
+      "invoice_id": "inv_018",
+      "score": 15,
+      "confidence": "Low",
+      "pct": 15,
+      "agree": [
+       "odometer within 26 mi of the invoice"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": null,
+     "body_style": null,
+     "odometer": 78903,
+     "time": "2026-01-05T13:01:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Odometer 78,903 miles \u2192 1 invoice within 500 miles",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "No confirmed VIN or plate matched exactly one invoice, but these invoices share details with the photos. Check before saving.",
+    "photos": [
+     {
+      "name": "car3_odometer.jpg",
+      "type": "Odometer",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Odometer",
+        "78,903 miles",
+        "OCR"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car3-all",
+   "car": "car3",
+   "label": "All photos",
+   "names": [
+    "car3_plate.jpg",
+    "car3_odometer.jpg"
+   ],
+   "seconds": 0.2,
+   "result": {
+    "kind": "confident",
+    "items": [
+     {
+      "invoice_id": "inv_041",
+      "score": 76.7,
+      "confidence": "Confident",
+      "pct": 100,
+      "agree": [
+       "plate matches",
+       "photo taken 3 days after the invoice"
+      ],
+      "disagree": [
+       "odometer differs (78,903 vs 78 mi)"
+      ],
+      "highlight": "plate",
+      "linked": true,
+      "id_evidence": true
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": "CYM2460",
+     "plate_state": "AZ",
+     "plate_trusted": true,
+     "color": null,
+     "body_style": null,
+     "odometer": 78903,
+     "time": "2026-01-05T13:00:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Looked up plate CYM2460 among 35 invoices \u2192 1 exact match",
+     "Odometer 78,903 miles \u2192 1 invoice within 500 miles",
+     "Compared 2 invoices closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "The license plate and state in the photos is confirmed (two independent readers agree) and exactly one invoice has the same confirmed license plate and state.",
+    "photos": [
+     {
+      "name": "car3_plate.jpg",
+      "type": "License plate",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "CYM2460",
+        "plate reader"
+       ],
+       [
+        "State",
+        "AZ",
+        "AI"
+       ]
+      ],
+      "notes": []
+     },
+     {
+      "name": "car3_odometer.jpg",
+      "type": "Odometer",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Odometer",
+        "78,903 miles",
+        "OCR"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car4-vin",
+   "car": "car4",
+   "label": "VIN sticker",
+   "names": [
+    "car4_VIN.jpg"
+   ],
+   "seconds": 0.2,
+   "result": {
+    "kind": "many",
+    "items": [
+     {
+      "invoice_id": "inv_007",
+      "score": 10,
+      "confidence": "Low",
+      "pct": 10,
+      "agree": [
+       "make and model match"
+      ],
+      "disagree": [
+       "VIN differs"
+      ],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_018",
+      "score": 10,
+      "confidence": "Low",
+      "pct": 10,
+      "agree": [
+       "make and model match"
+      ],
+      "disagree": [
+       "VIN differs"
+      ],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_008",
+      "score": 0,
+      "confidence": "Low",
+      "pct": 0,
+      "agree": [],
+      "disagree": [
+       "make/model differs (invoice says Toyota RAV4)"
+      ],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_046",
+      "score": 0,
+      "confidence": "Low",
+      "pct": 0,
+      "agree": [],
+      "disagree": [
+       "VIN differs",
+       "make/model differs (invoice says Toyota Camry)"
+      ],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     }
+    ],
+    "read": {
+     "vin": "2T1BURHE2FC487346",
+     "vin_trusted": true,
+     "vin_source": "barcode",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": null,
+     "body_style": null,
+     "odometer": null,
+     "time": "2026-10-21T18:21:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": "TOYOTA",
+     "model": "Corolla",
+     "year": 2015
+    },
+    "searches": [
+     "Looked up VIN 2T1BURHE2FC487346 among 35 invoices \u2192 no exact matches",
+     "Toyota, dated within a week of the photos \u2192 no invoices",
+     "No invoice was close enough to compare in detail"
+    ],
+    "fits": {
+     "count": 4,
+     "what": "Toyota Corolla car"
+    },
+    "why": "4 invoices fit this description (Toyota Corolla car), and nothing in the photos tells them apart, so the tool doesn't pick one. Add a photo of the VIN sticker or the license plate to find the exact invoice.",
+    "photos": [
+     {
+      "name": "car4_VIN.jpg",
+      "type": "Door sticker",
+      "type_by": "AI",
+      "reads": [
+       [
+        "VIN",
+        "2T1BURHE2FC487346",
+        "barcode"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car4-exterior",
+   "car": "car4",
+   "label": "Outside",
+   "names": [
+    "car4_exterior.jpg"
+   ],
+   "seconds": 0.1,
+   "result": {
+    "kind": "many",
+    "items": [
+     {
+      "invoice_id": "inv_002",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_006",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_016",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": true,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_017",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     },
+     {
+      "invoice_id": "inv_018",
+      "score": 8,
+      "confidence": "Low",
+      "pct": 8,
+      "agree": [
+       "color matches"
+      ],
+      "disagree": [],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     }
+    ],
+    "read": {
+     "vin": null,
+     "vin_trusted": false,
+     "vin_source": "",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": "silver",
+     "body_style": "sedan",
+     "odometer": null,
+     "time": "2026-10-21T18:22:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": null,
+     "model": null,
+     "year": null
+    },
+    "searches": [
+     "Looked up plate 3689 among 35 invoices \u2192 no exact matches",
+     "Silver, dated within a week of the photos \u2192 no invoices",
+     "No invoice was close enough to compare in detail"
+    ],
+    "fits": {
+     "count": 8,
+     "what": "silver car"
+    },
+    "why": "8 invoices fit this description (silver car), and nothing in the photos tells them apart, so the tool doesn't pick one. Add a photo of the VIN sticker or the license plate to find the exact invoice.",
+    "photos": [
+     {
+      "name": "car4_exterior.jpg",
+      "type": "Outside of the car",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "3689",
+        "plate reader"
+       ],
+       [
+        "Color",
+        "Silver",
+        "AI"
+       ],
+       [
+        "Body style",
+        "sedan",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  },
+  {
+   "id": "car4-all",
+   "car": "car4",
+   "label": "All photos",
+   "names": [
+    "car4_VIN.jpg",
+    "car4_exterior.jpg"
+   ],
+   "seconds": 0.2,
+   "result": {
+    "kind": "possible",
+    "items": [
+     {
+      "invoice_id": "inv_018",
+      "score": 18,
+      "confidence": "Low",
+      "pct": 18,
+      "agree": [
+       "color and model match"
+      ],
+      "disagree": [
+       "VIN differs"
+      ],
+      "highlight": null,
+      "linked": false,
+      "id_evidence": false
+     }
+    ],
+    "read": {
+     "vin": "2T1BURHE2FC487346",
+     "vin_trusted": true,
+     "vin_source": "barcode",
+     "plate": null,
+     "plate_state": null,
+     "plate_trusted": false,
+     "color": "silver",
+     "body_style": "sedan",
+     "odometer": null,
+     "time": "2026-10-21T18:21:00",
+     "time_from_exif": true,
+     "uploaders": [],
+     "make": "TOYOTA",
+     "model": "Corolla",
+     "year": 2015
+    },
+    "searches": [
+     "Looked up VIN 2T1BURHE2FC487346 among 35 invoices \u2192 no exact matches",
+     "Looked up plate 3689 among 35 invoices \u2192 no exact matches",
+     "Silver or Toyota, dated within a week of the photos \u2192 no invoices",
+     "Compared 1 invoice closely, detail by detail"
+    ],
+    "fits": null,
+    "why": "No confirmed VIN or plate matched exactly one invoice, but these invoices share details with the photos. Check before saving.",
+    "photos": [
+     {
+      "name": "car4_VIN.jpg",
+      "type": "Door sticker",
+      "type_by": "AI",
+      "reads": [
+       [
+        "VIN",
+        "2T1BURHE2FC487346",
+        "barcode"
+       ]
+      ],
+      "notes": []
+     },
+     {
+      "name": "car4_exterior.jpg",
+      "type": "Outside of the car",
+      "type_by": "AI",
+      "reads": [
+       [
+        "Plate",
+        "3689",
+        "plate reader"
+       ],
+       [
+        "Color",
+        "Silver",
+        "AI"
+       ],
+       [
+        "Body style",
+        "sedan",
+        "AI"
+       ]
+      ],
+      "notes": []
+     }
+    ]
+   }
+  }
+ ]
+}

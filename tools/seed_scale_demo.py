@@ -239,9 +239,12 @@ def write_demo_photos(p: Plan, out: Path, seed: int, now: datetime, invoice_coun
     ext = exterior_rows()
     cars = [(inv, inv.invoice_id) for inv in p.demo] + [(p.stranger, None)]
     rng.shuffle(cars)
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
+    out.mkdir(parents=True, exist_ok=True)
+    for old in out.iterdir():  # empty it in place: a Docker bind mount can't be removed
+        if old.is_dir() and not old.is_symlink():
+            shutil.rmtree(old)
+        else:
+            old.unlink()
     rows = []
     for k, (inv, invoice_id) in enumerate(cars, start=1):
         options = ext[(inv.model.make, inv.model.model, inv.color)]

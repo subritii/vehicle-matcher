@@ -15,6 +15,7 @@ are refused with 403): set WIKIMEDIA_CONTACT to your email or a URL.
 
 Usage:
     python tools/fetch_exteriors.py [--per 2] [--difficulty hard] [--seed 7]
+    python tools/fetch_exteriors.py --listed   # only download the photos exteriors.csv lists (Docker)
 """
 
 from __future__ import annotations
@@ -28,6 +29,7 @@ import re
 import sys
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 import httpx
 
@@ -100,17 +102,48 @@ def slug(*parts: str) -> str:
     return "_".join(re.sub(r"[^a-z0-9]+", "-", p.lower()).strip("-") for p in parts)
 
 
+def download_listed(folder: Path, http, pause: float = 0.5, side: int = 1280) -> int:
+    """Download the photos ``folder``/exteriors.csv lists that aren't there yet, at most
+    ``side`` px on the long side. The list itself is not changed. Returns the count."""
+    from io import BytesIO
+
+    from PIL import Image
+
+    with open(Path(folder) / "exteriors.csv", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    got = 0
+    for r in rows:
+        dest = Path(folder) / r["photo"]
+        if dest.exists():
+            continue
+        name = quote(r["title"].removeprefix("File:").replace(" ", "_"), safe="()!,'*-._~")
+        resp = http.get(f"https://commons.wikimedia.org/wiki/Special:FilePath/{name}?width={side}")
+        resp.raise_for_status()
+        with Image.open(BytesIO(resp.content)) as im:
+            im = im.convert("RGB")
+            im.thumbnail((side, side))
+            im.save(dest, "JPEG", quality=88)
+        got += 1
+        time.sleep(pause)  # be polite to upload.wikimedia.org
+    return got
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--per", type=int, default=2, help="photos per make/model/color")
     ap.add_argument("--difficulty", choices=("easy", "hard"), default="hard", help="which answer key lists the vehicles")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--listed", action="store_true", help="only download the photos exteriors.csv lists")
     args = ap.parse_args(argv)
 
     contact = os.getenv("WIKIMEDIA_CONTACT", "").strip()
     if not contact:
         print("Set WIKIMEDIA_CONTACT to your email or a URL: Wikimedia refuses API clients without contact details.")
         return 2
+    if args.listed:
+        got = download_listed(OUT, Commons(contact).http)
+        print(f"{got} photos downloaded -> {OUT}")
+        return 0
     OUT.mkdir(parents=True, exist_ok=True)
     csv_path = OUT / "exteriors.csv"
     existing = {}

@@ -22,3 +22,6 @@ tests/fixtures/exteriors/*.jpg
 # Instructions for the coding assistant: local only
 claude.md
 CLAUDE.md
+
+# Photos of the cars on the lot written by the Docker version (docker-compose.yml)
+demo_photos/

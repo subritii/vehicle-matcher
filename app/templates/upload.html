@@ -8,6 +8,16 @@
 <div class="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-base text-rose-900 dark:border-rose-900 dark:bg-rose-950/60 dark:text-rose-100" role="alert">{{ error }}</div>
 {% endif %}
 
+{% if showcase %}
+<section class="{{ ui.CARD }} max-w-3xl p-6 sm:p-8">
+  <h2 class="text-xl font-semibold {{ ui.H }}">Uploading is turned off in the showcase</h2>
+  <p class="mt-2 text-base {{ ui.MUTED }}">This public demo is read-only and runs without OCR, the plate reader or the AI model. In the full version you add an invoice and its car photos here and watch each step: reading the invoice, sorting and reading the photos, and matching.</p>
+  <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+    <a href="{{ docker_url }}" class="{{ ui.BTN }}">Run it yourself with Docker</a>
+    <a href="/find" class="{{ ui.BTN2 }}">Try the sample photos</a>
+  </div>
+</section>
+{% else %}
 <div class="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
   <form method="post" action="/upload" enctype="multipart/form-data" hx-boost="false" class="{{ ui.CARD }} space-y-7 p-6 sm:p-8">
     {% for id, name, title, hint, accept, multiple, icon in [
@@ -60,4 +70,5 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 {% endblock %}

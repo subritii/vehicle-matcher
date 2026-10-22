@@ -1,0 +1,16 @@
+# Render Blueprint: the read-only showcase on the free plan (512 MB). See the README,
+# "Deploy the live demo to Render".
+services:
+  - type: web
+    name: vehicle-matcher-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile.showcase
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: false
+    envVars:
+      - key: DEMO_MODE
+        value: showcase
+      - key: SHOWCASE_DOCKER_URL
+        value: https://github.com/subritii/vehicle-matcher#run-it-yourself
